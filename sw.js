@@ -1,4 +1,4 @@
-const TEMPO_CACHE = 'temponest-pwa-v1.2.1-mobile-layout-fix';
+const TEMPO_CACHE = 'temponest-pwa-v1.2.2-mobile-ux-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -68,4 +68,17 @@ self.addEventListener('fetch', (event) => {
       return cached || networkFetch;
     })
   );
+});
+
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const allClients = await clients.matchAll({type: 'window', includeUncontrolled: true});
+    if(allClients.length){
+      const client = allClients[0];
+      if('focus' in client) return client.focus();
+    }
+    if(clients.openWindow) return clients.openWindow('./');
+  })());
 });

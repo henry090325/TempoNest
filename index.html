@@ -7576,5 +7576,323 @@ body.dark .mobile-settings-shortcut{background:rgba(255,255,255,.05)}
 })();
 </script>
 
+
+
+<style>
+/* =========================================================
+   45. MOBILE UX FIX V3
+   - Settings shortcut appears in portrait and landscape.
+   - Phone landscape bottom nav becomes a compact side rail.
+   - Focus mode slides swipe horizontally on phones instead of stacking vertically.
+   - Tasks selected-day card stacks below calendar on phone landscape.
+   - Extra bottom spacing prevents cards from hiding behind nav.
+   ========================================================= */
+.mobile-notify-shortcut{
+  display:none;
+  width:42px;
+  height:42px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,.52);
+  color:var(--text);
+  font-weight:950;
+  font-size:18px;
+  box-shadow:0 10px 24px rgba(30,46,82,.08);
+}
+body.dark .mobile-notify-shortcut{background:rgba(255,255,255,.05)}
+
+@media (max-width:860px){
+  .app{
+    padding-top:max(58px, calc(env(safe-area-inset-top, 0px) + 28px)) !important;
+    padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 142px) !important;
+  }
+  .topbar{
+    position:relative !important;
+    top:auto !important;
+    margin-top:0 !important;
+    margin-bottom:12px !important;
+    padding:12px 13px !important;
+  }
+  .topbar-left{min-width:0;flex:1 1 auto !important;}
+  .title-stack{min-width:0;}
+  .top-actions{flex:0 0 auto;gap:7px !important;}
+  .top-actions .icon-btn{height:42px !important;border-radius:999px !important;padding:0 12px !important;}
+  .mobile-settings-shortcut,
+  .mobile-notify-shortcut{display:inline-flex !important;}
+  .mobile-settings-shortcut{width:42px !important;height:42px !important;}
+  .panel{padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 146px) !important;}
+  #tasksScreen .panel,
+  #statsScreen .panel,
+  #dashboardScreen .panel{padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 164px) !important;}
+  #tasksScreen .selected-day-card{margin-bottom:32px !important;}
+  #tasksScreen .todo-head{align-items:flex-start !important;}
+  #tasksScreen .selected-date-actions{display:grid !important;grid-template-columns:1fr 1fr !important;gap:8px !important;width:100% !important;margin-top:10px !important;}
+  #tasksScreen .todo-head{display:block !important;}
+  #tasksScreen .task-add-actions{display:none !important;}
+}
+
+/* Phone landscape is wide but short, so use one-column pages + side navigation */
+@media (max-height:520px) and (orientation:landscape){
+  .app{
+    grid-template-columns:1fr !important;
+    width:100% !important;
+    padding:16px 86px 16px 16px !important;
+  }
+  .sidebar,.drawer-scrim,.hamburger{display:none !important;}
+  .topbar{position:relative !important;top:auto !important;margin:0 0 16px !important;}
+  .screen.active{display:block !important;}
+  .panel{min-height:auto !important;padding:22px !important;padding-bottom:38px !important;}
+  .side{display:flex !important;flex-direction:column !important;gap:16px !important;margin-top:16px !important;min-width:0 !important;}
+  #tasksScreen .side,#statsScreen .side,#dashboardScreen .side{padding-bottom:20px !important;}
+  #tasksScreen .selected-day-card{margin-bottom:12px !important;}
+  .mobile-tabbar{
+    position:fixed !important;
+    left:auto !important;
+    right:10px !important;
+    top:50% !important;
+    bottom:auto !important;
+    transform:translateY(-50%) !important;
+    width:64px !important;
+    max-height:calc(100dvh - 22px) !important;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:6px !important;
+    padding:7px !important;
+    border-radius:25px !important;
+    z-index:999 !important;
+  }
+  .mobile-tab{min-height:50px !important;border-radius:18px !important;font-size:9px !important;gap:3px !important;}
+  .mobile-tab b{font-size:17px !important;}
+  .launch-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:12px !important;}
+  .launch-card{min-height:134px !important;padding:16px !important;}
+  .dashboard-hero{grid-template-columns:1fr 270px !important;}
+  .big-clock{font-size:clamp(52px,12vw,92px) !important;}
+}
+
+/* Focus mode on phones: horizontal paging, not awkward vertical stacking */
+@media (max-height:520px) and (orientation:landscape){
+  body.focus-mode-open .mobile-tabbar{display:none !important;}
+  .standby-fullscreen.show{overflow:hidden !important;}
+  .standby-fullscreen.show .standby-content{
+    display:flex !important;
+    flex-direction:row !important;
+    width:100dvw !important;
+    height:100dvh !important;
+    padding:0 !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    scroll-snap-type:x mandatory !important;
+    scroll-behavior:smooth !important;
+  }
+  .standby-fullscreen.show .focus-slide{
+    flex:0 0 100dvw !important;
+    width:100dvw !important;
+    min-width:100dvw !important;
+    min-height:100dvh !important;
+    height:100dvh !important;
+    scroll-snap-align:start !important;
+    padding:12px 58px 12px 14px !important;
+    display:flex !important;
+    justify-content:center !important;
+    box-sizing:border-box !important;
+  }
+  .standby-fullscreen.show .focus-device-wrap{width:min(1120px,100%) !important;}
+  .standby-fullscreen.show .focus-device-screen{
+    min-height:calc(100dvh - 24px) !important;
+    height:calc(100dvh - 24px) !important;
+    grid-template-columns:minmax(0,.95fr) minmax(320px,.9fr) !important;
+    gap:12px !important;
+    padding:16px !important;
+    border-radius:34px !important;
+  }
+  .standby-fullscreen.show .focus-clock-face{width:min(44dvh,245px) !important;}
+  .standby-fullscreen.show .focus-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:8px !important;}
+  .standby-fullscreen.show .focus-metric-card{min-height:58px !important;padding:8px 10px !important;border-radius:17px !important;}
+  .standby-fullscreen.show .focus-calendar-card{padding:12px !important;border-radius:22px !important;}
+  .standby-fullscreen.show .focus-calendar-grid span,
+  .standby-fullscreen.show .focus-calendar-grid button{height:22px !important;min-height:22px !important;font-size:10px !important;}
+  .standby-fullscreen.show .focus-slide-title{font-size:clamp(28px,8vw,54px) !important;}
+  .standby-fullscreen.show .standby-widget{padding:18px !important;border-radius:28px !important;}
+  .standby-fullscreen.show .standby-widget strong{font-size:clamp(28px,8vw,70px) !important;}
+  .standby-fullscreen.show .standby-close{right:10px !important;top:10px !important;width:42px !important;height:42px !important;border-radius:15px !important;}
+  .standby-fullscreen.show .focus-dot-nav{right:10px !important;top:50% !important;transform:translateY(-50%) !important;}
+}
+
+/* Portrait focus overlay: keep the close button and paging usable */
+@media (max-width:860px) and (orientation:portrait){
+  .standby-fullscreen.show.phone-rotate-standby .standby-close{z-index:30 !important;}
+  .standby-fullscreen.show.phone-rotate-standby .standby-content{scrollbar-width:none !important;}
+  .standby-fullscreen.show.phone-rotate-standby .standby-content::-webkit-scrollbar{display:none !important;}
+}
+</style>
+
+<script>
+/* Mobile UX Fix V3: settings shortcut, notification permission, stronger task layout */
+(function(){
+  const $ = id => document.getElementById(id);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+  function show(msg){
+    try{ if(typeof showToast === 'function') showToast(msg); else console.log(msg); }catch(e){ console.log(msg); }
+  }
+
+  function hardSwitch(view){
+    try{ if(typeof switchView === 'function') switchView(view); }catch(e){}
+    const map = {dashboard:'dashboardScreen',timer:'timerScreen',tasks:'tasksScreen',stats:'statsScreen',settings:'settingsScreen',clock:'clockScreen',alarm:'alarmScreen'};
+    if(map[view]){
+      $$('.screen').forEach(s => s.classList.remove('active'));
+      $(map[view])?.classList.add('active');
+      try{ currentView = view; }catch(e){}
+      document.body.dataset.activeView = view;
+      $$('.mobile-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.mobileView === view));
+      $$('.nav-item').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
+      window.scrollTo({top:0, behavior:'instant'});
+    }
+  }
+
+  function installSettingsAndNotify(){
+    const topActions = document.querySelector('.top-actions');
+    if(!topActions) return;
+
+    let settingsBtn = $('mobileSettingsShortcut');
+    if(!settingsBtn){
+      settingsBtn = document.createElement('button');
+      settingsBtn.className = 'mobile-settings-shortcut';
+      settingsBtn.id = 'mobileSettingsShortcut';
+      settingsBtn.type = 'button';
+      settingsBtn.title = '설정';
+      settingsBtn.setAttribute('aria-label','설정으로 이동');
+      settingsBtn.textContent = '⚙︎';
+      topActions.appendChild(settingsBtn);
+    }
+    if(!settingsBtn.__v3){
+      settingsBtn.__v3 = true;
+      settingsBtn.addEventListener('click', e => { e.preventDefault(); hardSwitch('settings'); });
+    }
+
+    let notifyBtn = $('mobileNotifyShortcut');
+    if(!notifyBtn){
+      notifyBtn = document.createElement('button');
+      notifyBtn.className = 'mobile-notify-shortcut';
+      notifyBtn.id = 'mobileNotifyShortcut';
+      notifyBtn.type = 'button';
+      notifyBtn.title = '알림 켜기';
+      notifyBtn.setAttribute('aria-label','알림 권한 요청');
+      notifyBtn.textContent = '🔔';
+      topActions.appendChild(notifyBtn);
+    }
+    if(!notifyBtn.__v3){
+      notifyBtn.__v3 = true;
+      notifyBtn.addEventListener('click', requestNotificationPermission);
+    }
+    updateNotificationButton();
+  }
+
+  async function requestNotificationPermission(){
+    if(!('Notification' in window)){
+      show('이 브라우저는 웹 알림을 지원하지 않습니다');
+      return;
+    }
+    try{
+      const result = await Notification.requestPermission();
+      updateNotificationButton();
+      if(result === 'granted'){
+        show('알림이 켜졌습니다');
+        try{
+          const reg = await navigator.serviceWorker?.ready;
+          if(reg?.showNotification){
+            await reg.showNotification('TempoNest 알림 켜짐', {
+              body:'타이머 종료와 알람을 팝업으로 알려드릴게요.',
+              icon:'icons/icon-192.png',
+              badge:'icons/maskable-192.png',
+              tag:'temponest-ready'
+            });
+          }else{
+            new Notification('TempoNest 알림 켜짐', {body:'타이머 종료와 알람을 팝업으로 알려드릴게요.'});
+          }
+        }catch(e){
+          try{ new Notification('TempoNest 알림 켜짐', {body:'타이머 종료와 알람을 팝업으로 알려드릴게요.'}); }catch(_){ }
+        }
+      }else if(result === 'denied'){
+        show('알림이 차단되어 있습니다. 브라우저 설정에서 허용해야 합니다');
+      }else{
+        show('알림 권한이 아직 허용되지 않았습니다');
+      }
+    }catch(e){
+      show('알림 권한 요청에 실패했습니다');
+    }
+  }
+
+  function updateNotificationButton(){
+    const btn = $('mobileNotifyShortcut');
+    if(!btn) return;
+    if(!('Notification' in window)){
+      btn.textContent = '🔕';
+      btn.title = '알림 미지원';
+    }else if(Notification.permission === 'granted'){
+      btn.textContent = '🔔';
+      btn.title = '알림 켜짐';
+    }else if(Notification.permission === 'denied'){
+      btn.textContent = '🔕';
+      btn.title = '알림 차단됨';
+    }else{
+      btn.textContent = '🔔';
+      btn.title = '알림 켜기';
+    }
+  }
+
+  function patchMobileTabs(){
+    const bar = $('mobileTabbar');
+    if(!bar || bar.__v3Tabs) return;
+    bar.__v3Tabs = true;
+    ['click','touchend'].forEach(type => {
+      bar.addEventListener(type, e => {
+        const btn = e.target.closest('[data-mobile-view]');
+        if(!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        hardSwitch(btn.dataset.mobileView);
+      }, {capture:true, passive:false});
+    });
+  }
+
+  function patchTaskLayout(){
+    const selectedCard = document.querySelector('#tasksScreen .selected-day-card');
+    if(!selectedCard) return;
+    const actions = selectedCard.querySelector('.selected-date-actions');
+    if(actions && !actions.__v3Labelled){
+      actions.__v3Labelled = true;
+      actions.querySelector('[data-open-schedule]')?.setAttribute('aria-label','선택한 날짜에 일정 추가');
+      actions.querySelector('[data-open-task]')?.setAttribute('aria-label','선택한 날짜에 할 일 추가');
+    }
+  }
+
+  function syncActiveView(){
+    const current = $$('.screen').find(s => s.classList.contains('active'));
+    if(current){
+      const view = current.id.replace('Screen','');
+      const normalized = view === 'dashboard' ? 'dashboard' : view;
+      document.body.dataset.activeView = normalized;
+      $$('.mobile-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.mobileView === normalized));
+    }
+  }
+
+  function boot(){
+    installSettingsAndNotify();
+    patchMobileTabs();
+    patchTaskLayout();
+    syncActiveView();
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  window.addEventListener('resize', () => setTimeout(boot, 120));
+  window.addEventListener('orientationchange', () => setTimeout(boot, 320));
+  setInterval(boot, 1200);
+})();
+</script>
+
 </body>
 </html>
