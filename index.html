@@ -8510,5 +8510,350 @@ body.dark .tn-tutorial-card{border-color:rgba(255,255,255,.08)}
 })();
 </script>
 
+
+
+<style>
+/* =========================================================
+   Mobile UX Fix V6
+   - New 3-step tutorial: mode -> tips -> notifications.
+   - Stabilize dashboard focus hint text.
+   - iPhone landscape focus mode: real vertical scrolling fallback.
+   - Compact focus cards for small landscape screens.
+   ========================================================= */
+
+/* Focus mode: iPhone/Safari landscape scroll fallback */
+@media (orientation: landscape) and (max-height: 560px){
+  body.focus-mode-open{overflow:hidden !important;}
+  .standby-fullscreen.show{
+    display:block !important;
+    position:fixed !important;
+    inset:0 !important;
+    width:100vw !important;
+    height:100svh !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior:contain !important;
+    padding:0 !important;
+  }
+  .standby-content{
+    display:block !important;
+    width:100% !important;
+    max-width:none !important;
+    height:auto !important;
+    min-height:100svh !important;
+    overflow:visible !important;
+    padding:18px 58px 28px 18px !important;
+    scroll-snap-type:none !important;
+    transform:none !important;
+  }
+  .focus-slide,
+  .focus-device-slide,
+  .focus-mode-hero{
+    min-height:auto !important;
+    height:auto !important;
+    max-height:none !important;
+    scroll-snap-align:none !important;
+    scroll-snap-stop:normal !important;
+    padding:14px 0 18px !important;
+    margin:0 0 14px !important;
+    display:block !important;
+  }
+  .focus-device-wrap{width:100% !important;margin:0 !important;display:block !important;perspective:none !important;}
+  .focus-device-screen{
+    width:100% !important;
+    min-height:auto !important;
+    height:auto !important;
+    display:grid !important;
+    grid-template-columns:minmax(260px,.95fr) minmax(300px,1.05fr) !important;
+    gap:14px !important;
+    border-radius:28px !important;
+    padding:16px !important;
+    overflow:visible !important;
+  }
+  .focus-screen-left{padding:10px !important;gap:10px !important;min-height:auto !important;}
+  .focus-screen-right{gap:10px !important;min-height:auto !important;}
+  .focus-brand-line strong{font-size:24px !important;line-height:1.08 !important;}
+  .focus-brand-line em{font-size:13px !important;margin-top:3px !important;}
+  .focus-target-icon{width:30px !important;height:30px !important;border-radius:12px !important;}
+  .focus-analog-wrap{min-height:auto !important;display:grid !important;place-items:center !important;padding:0 !important;}
+  .focus-clock-face{width:clamp(190px,28vw,260px) !important;}
+  .focus-clock-num{font-size:15px !important;transform:translate(-50%,-50%) rotate(var(--a)) translateY(calc(-1 * clamp(82px,12vw,112px))) rotate(calc(-1 * var(--a))) !important;}
+  .focus-now-row{font-size:12px !important;margin-top:6px !important;}
+  .focus-calendar-card,
+  .focus-metric-card,
+  .focus-smart-card,
+  .focus-detail-card,
+  .standby-widget,
+  .focus-feature-card,
+  .focus-daily-eval-card{
+    border-radius:22px !important;
+    padding:14px !important;
+    min-height:auto !important;
+    max-height:none !important;
+    overflow:hidden !important;
+  }
+  .focus-calendar-grid{gap:4px !important;margin-top:8px !important;}
+  .focus-calendar-grid span{height:24px !important;font-size:11px !important;border-radius:8px !important;}
+  .focus-calendar-top strong{font-size:16px !important;}
+  .focus-calendar-arrows button,
+  .focus-calendar-arrows .round{width:32px !important;height:32px !important;}
+  .standby-time{font-size:clamp(46px,8vw,86px) !important;line-height:.95 !important;}
+  .focus-slide-title{font-size:clamp(22px,4vw,34px) !important;margin-bottom:10px !important;}
+  .focus-single-card{width:100% !important;max-width:none !important;}
+  .focus-single-card strong,
+  .standby-widget strong,
+  .focus-daily-eval-card strong{font-size:clamp(34px,7vw,62px) !important;line-height:1.04 !important;}
+  .standby-widget p,
+  .focus-daily-eval-card p{font-size:14px !important;line-height:1.35 !important;}
+  .timer-simple-card{padding:16px !important;border-radius:22px !important;width:100% !important;}
+  .timer-progress{width:min(240px,42vw) !important;}
+  .timer-dial-time{font-size:clamp(42px,8vw,70px) !important;}
+  .timer-inputs,
+  .timer-helper,
+  .preset-grid{display:none !important;}
+  .focus-action-row,
+  .pomodoro-focus-actions{grid-template-columns:1fr 1fr !important;gap:8px !important;}
+  .standby-close{right:12px !important;top:12px !important;width:44px !important;height:44px !important;border-radius:16px !important;font-size:24px !important;}
+  .focus-slide-dots{position:fixed !important;right:12px !important;top:50% !important;transform:translateY(-50%) !important;z-index:140 !important;}
+}
+
+/* Very narrow iPhone landscape: stack inside first focus slide instead of clipping */
+@media (orientation: landscape) and (max-height: 430px) and (max-width: 760px){
+  .standby-content{padding-right:52px !important;}
+  .focus-device-screen{grid-template-columns:1fr 1fr !important;gap:10px !important;padding:12px !important;}
+  .focus-clock-face{width:clamp(160px,26vw,215px) !important;}
+  .focus-calendar-card{padding:12px !important;}
+  .focus-calendar-grid span{height:20px !important;font-size:10px !important;}
+}
+
+/* Tutorial V6 */
+.tn-v6-backdrop{position:fixed;inset:0;z-index:310;display:grid;place-items:center;padding:18px;background:rgba(5,8,18,.52);backdrop-filter:blur(18px)}
+.tn-v6-card{width:min(680px,100%);max-height:min(86svh,760px);overflow:auto;border-radius:32px;padding:26px;background:var(--card-strong);box-shadow:0 30px 90px rgba(0,0,0,.30);border:1px solid rgba(255,255,255,.56)}
+body.dark .tn-v6-card{border-color:rgba(255,255,255,.08)}
+.tn-v6-kicker{display:inline-flex;border-radius:999px;padding:8px 12px;background:rgba(50,103,246,.10);color:var(--blue);font-size:12px;font-weight:950;margin-bottom:12px}
+.tn-v6-card h2{font-size:30px;line-height:1.15;margin:0 0 8px;font-weight:950;letter-spacing:-.04em}.tn-v6-card p{margin:0;color:var(--muted);font-weight:780;line-height:1.55}.tn-v6-progress{display:flex;gap:6px;margin:18px 0}.tn-v6-progress span{height:7px;flex:1;border-radius:99px;background:rgba(148,163,184,.20)}.tn-v6-progress span.active{background:linear-gradient(90deg,var(--blue),var(--purple))}.tn-v6-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}.tn-v6-option{min-height:92px;text-align:left;border:1px solid var(--line);border-radius:20px;padding:15px;background:rgba(148,163,184,.07);color:var(--text);font-weight:900}.tn-v6-option strong{display:block;font-size:17px;margin-bottom:5px}.tn-v6-option span{display:block;color:var(--muted);font-size:13px;line-height:1.4;font-weight:780}.tn-v6-option.active{background:linear-gradient(135deg,rgba(50,103,246,.16),rgba(139,92,246,.12));border-color:rgba(50,103,246,.35)}.tn-v6-tips{display:grid;gap:10px;margin-top:18px}.tn-v6-tip{border:1px solid var(--line);border-radius:18px;padding:14px;background:rgba(148,163,184,.07)}.tn-v6-tip strong{display:block;font-size:15px;margin-bottom:5px}.tn-v6-tip span{display:block;color:var(--muted);font-size:13px;font-weight:780;line-height:1.45}.tn-v6-actions{display:grid;grid-template-columns:auto 1fr auto;gap:10px;margin-top:20px}.tn-v6-actions .btn.primary{min-width:130px}.tn-v6-notice{margin-top:16px;border:1px solid var(--line);border-radius:18px;padding:14px;background:rgba(50,103,246,.07);color:var(--muted);font-size:13px;font-weight:780;line-height:1.5}
+@media(max-width:560px){.tn-v6-card{padding:22px;border-radius:28px}.tn-v6-card h2{font-size:25px}.tn-v6-options{grid-template-columns:1fr}.tn-v6-actions{grid-template-columns:1fr}.tn-v6-actions .btn{width:100%}}
+</style>
+
+<script>
+/* Mobile UX Fix V6: guided setup, stable focus hint, iPhone landscape fallback */
+(function(){
+  const $ = id => document.getElementById(id);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const store = {
+    get(k,f=null){try{return JSON.parse(localStorage.getItem(k) || 'null') ?? f}catch(e){return f}},
+    set(k,v){try{localStorage.setItem(k, JSON.stringify(v))}catch(e){}}
+  };
+
+  function isPhone(){return /iPhone|iPod|Android.+Mobile/i.test(navigator.userAgent) || Math.min(innerWidth, innerHeight) < 620;}
+  function isIOS(){return /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);}
+
+  // Stop older onboarding/tutorials from stacking, then install our v6 version.
+  function disableOldGuides(){
+    try{
+      localStorage.setItem('ds.onboarded.launch-v1','true');
+      localStorage.setItem('ds.tutorial.v4','true');
+    }catch(e){}
+    ['onboardingModal','tnTutorial'].forEach(id => $(id)?.remove());
+  }
+
+  const modes = {
+    study:{title:'공부 모드', desc:'할 일과 집중 타이머를 중심으로 하루 공부 흐름을 잡아요.', goals:{dailyFocusMinutes:60,dailyTodos:3}},
+    exam:{title:'시험 대비', desc:'할 일을 더 많이 잡고, 짧은 집중을 여러 번 반복하기 좋아요.', goals:{dailyFocusMinutes:120,dailyTodos:5}},
+    life:{title:'생활 관리', desc:'일정, 날씨, 가벼운 할 일을 한 화면에서 확인해요.', goals:{dailyFocusMinutes:30,dailyTodos:2}},
+    clock:{title:'탁상 시계', desc:'iPad나 폰을 세워두고 시계와 오늘 요약을 보는 용도예요.', goals:{dailyFocusMinutes:25,dailyTodos:2}}
+  };
+
+  let tutorialStep = 0;
+  let selectedMode = store.get('ds.usageMode','study') || 'study';
+
+  function requestNotificationPermission(){
+    return new Promise(resolve => {
+      if(!('Notification' in window)){ resolve('unsupported'); return; }
+      if(Notification.permission === 'granted' || Notification.permission === 'denied'){ resolve(Notification.permission); return; }
+      try{
+        const result = Notification.requestPermission();
+        if(result && typeof result.then === 'function') result.then(resolve).catch(() => resolve('default'));
+        else resolve(result || 'default');
+      }catch(e){ resolve('default'); }
+    });
+  }
+
+  function showSmallNotification(title, body, tag){
+    try{
+      if(!('Notification' in window) || Notification.permission !== 'granted') return;
+      if(navigator.serviceWorker && navigator.serviceWorker.ready){
+        navigator.serviceWorker.ready.then(reg => reg.showNotification(title, {body, tag:tag || 'temponest-v6', icon:'icon-192.png', badge:'icon-192.png'})).catch(()=>new Notification(title,{body, tag}));
+      }else new Notification(title,{body, tag});
+    }catch(e){}
+  }
+
+  function applyMode(mode){
+    const data = modes[mode] || modes.study;
+    selectedMode = mode;
+    try{localStorage.setItem('ds.usageMode', mode)}catch(e){}
+    store.set('ds.goals', data.goals);
+    if($('goalFocusMinutes')) $('goalFocusMinutes').value = data.goals.dailyFocusMinutes;
+    if($('goalDailyTodos')) $('goalDailyTodos').value = data.goals.dailyTodos;
+    $('goalApply')?.click();
+  }
+
+  function tipList(){
+    const device = isPhone() ? 'phone' : 'tablet';
+    const common = device === 'phone'
+      ? [['하단 탭','오늘 · 집중 · 할 일 · 통계를 빠르게 이동해요.'],['가로 집중모드','iPhone은 자동 회전 잠금이 켜져 있으면 웹앱도 가로 전환이 막힐 수 있어요.'],['설정','오른쪽 위 ⚙︎에서 목표, 테마, 날씨 위치를 바꿀 수 있어요.']]
+      : [['대시보드','시계, 날씨, 음악, 할 일을 한 화면에서 보는 용도예요.'],['집중모드','태블릿은 세워두고 스탠바이 화면처럼 쓰기 좋아요.'],['목표','하루 집중 시간과 할 일 목표를 설정하면 통계가 더 정확해져요.']];
+    const modeTip = {
+      study:['공부 흐름','가장 쉬운 할 일 하나를 먼저 끝내고, 그 다음 타이머를 켜면 좋아요.'],
+      exam:['시험 루틴','과목별 할 일을 쪼개서 넣고, 포모도로를 여러 라운드로 돌려보세요.'],
+      life:['생활 루틴','일정과 날씨를 먼저 보고, 오늘 꼭 할 일만 2개 정도 잡아보세요.'],
+      clock:['탁상 시계','충전 중인 기기에 띄워두고 시계와 오늘 요약만 가볍게 확인해요.']
+    }[selectedMode] || ['사용 팁','오늘 할 일을 하나만 정하고 시작해도 충분해요.'];
+    return [modeTip, ...common];
+  }
+
+  function renderTutorial(){
+    let modal = $('tnTutorialV6');
+    if(!modal){
+      modal = document.createElement('div');
+      modal.className = 'tn-v6-backdrop';
+      modal.id = 'tnTutorialV6';
+      document.body.appendChild(modal);
+      modal.addEventListener('click', onTutorialClick);
+    }
+    const progress = [0,1,2].map(i => `<span class="${i<=tutorialStep?'active':''}"></span>`).join('');
+    let body = '';
+    if(tutorialStep === 0){
+      body = `
+        <div class="tn-v6-kicker">1 / 3 시작 모드</div>
+        <h2>어떤 방식으로 쓸까요?</h2>
+        <p>${isPhone() ? '스마트폰에서는 빠른 할 일 확인과 짧은 집중에 맞춰 보여줄게요.' : '태블릿에서는 세워두고 보는 대시보드 흐름에 맞춰 보여줄게요.'}</p>
+        <div class="tn-v6-options">
+          ${Object.entries(modes).map(([key,m]) => `<button class="tn-v6-option ${key===selectedMode?'active':''}" type="button" data-v6-mode="${key}"><strong>${m.title}</strong><span>${m.desc}</span></button>`).join('')}
+        </div>`;
+    }else if(tutorialStep === 1){
+      body = `
+        <div class="tn-v6-kicker">2 / 3 사용 팁</div>
+        <h2>${isPhone() ? '모바일 사용 팁' : '태블릿 사용 팁'}</h2>
+        <p>${modes[selectedMode]?.title || '공부 모드'} 기준으로 기본 목표와 화면 흐름을 맞췄어요.</p>
+        <div class="tn-v6-tips">
+          ${tipList().map(([a,b]) => `<div class="tn-v6-tip"><strong>${a}</strong><span>${b}</span></div>`).join('')}
+        </div>`;
+    }else{
+      const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+      const permText = perm === 'granted' ? '알림 허용됨' : perm === 'denied' ? '알림 차단됨' : perm === 'unsupported' ? '이 브라우저는 알림 미지원' : '알림 요청 전';
+      body = `
+        <div class="tn-v6-kicker">3 / 3 알림</div>
+        <h2>알림을 켤까요?</h2>
+        <p>타이머 종료와 오전 8시 응원 문구를 받을 수 있어요. 요일마다 문구가 조금씩 달라져요.</p>
+        <div class="tn-v6-notice"><strong>현재 상태: ${permText}</strong><br>iPhone에서는 홈 화면에 추가한 PWA에서 더 안정적으로 작동해요. 알림 권한은 사용자의 터치가 있을 때만 요청될 수 있어요.</div>
+        <div class="tn-v6-options">
+          <button class="tn-v6-option" type="button" data-v6-notify="on"><strong>알림 켜기</strong><span>타이머와 아침 응원을 받아요.</span></button>
+          <button class="tn-v6-option" type="button" data-v6-notify="off"><strong>나중에 하기</strong><span>설정에서 다시 켤 수 있어요.</span></button>
+        </div>`;
+    }
+    modal.innerHTML = `
+      <div class="tn-v6-card" role="dialog" aria-modal="true" aria-labelledby="tnV6Title">
+        <div class="tn-v6-progress">${progress}</div>
+        ${body}
+        <div class="tn-v6-actions">
+          <button class="btn" type="button" data-v6-action="skip">건너뛰기</button>
+          <button class="btn" type="button" data-v6-action="back" ${tutorialStep===0?'disabled':''}>이전</button>
+          <button class="btn primary" type="button" data-v6-action="next">${tutorialStep===2?'시작하기':'다음'}</button>
+        </div>
+      </div>`;
+  }
+
+  function onTutorialClick(e){
+    const mode = e.target.closest('[data-v6-mode]');
+    if(mode){applyMode(mode.dataset.v6Mode); renderTutorial(); return;}
+    const notify = e.target.closest('[data-v6-notify]');
+    if(notify){
+      if(notify.dataset.v6Notify === 'on'){
+        requestNotificationPermission().then(state => {
+          localStorage.setItem('ds.dailyReminder.enabled', state === 'granted' ? 'true' : 'false');
+          if(state === 'granted') showSmallNotification('TempoNest 알림이 켜졌어요', '내일 오전 8시에 응원 문구를 보내볼게요.', 'temponest-permission');
+          renderTutorial();
+        });
+      }else{
+        localStorage.setItem('ds.dailyReminder.enabled','false');
+        renderTutorial();
+      }
+      return;
+    }
+    const action = e.target.closest('[data-v6-action]')?.dataset.v6Action;
+    if(!action) return;
+    if(action === 'skip'){finishTutorial(false); return;}
+    if(action === 'back'){tutorialStep = Math.max(0, tutorialStep - 1); renderTutorial(); return;}
+    if(action === 'next'){
+      if(tutorialStep < 2){tutorialStep++; renderTutorial();}
+      else finishTutorial(true);
+    }
+  }
+
+  function finishTutorial(done){
+    applyMode(selectedMode);
+    localStorage.setItem('ds.tutorial.v6','true');
+    $('tnTutorialV6')?.remove();
+    if(done && typeof showToast === 'function') showToast('시작 설정을 적용했습니다');
+  }
+
+  function installTutorialV6(){
+    disableOldGuides();
+    if(localStorage.getItem('ds.tutorial.v6') === 'true') return;
+    renderTutorial();
+  }
+
+  function stabilizeFocusHint(){
+    const el = $('launchFocusHint');
+    if(!el) return;
+    const text = '할 일부터 차분히 시작해볼까요?';
+    if(el.textContent !== text) el.textContent = text;
+    if(!el.__tnV6Observer){
+      const obs = new MutationObserver(() => { if(el.textContent !== text) el.textContent = text; });
+      obs.observe(el, {childList:true, characterData:true, subtree:true});
+      el.__tnV6Observer = obs;
+    }
+  }
+
+  function installSettingsTipV6(){
+    if($('settingsTipsV6')) return;
+    const side = document.querySelector('#settingsScreen .side') || document.querySelector('#settingsScreen .panel');
+    if(!side) return;
+    const card = document.createElement('div');
+    card.className = 'card glass settings-tip-card';
+    card.id = 'settingsTipsV6';
+    card.innerHTML = `<h3>사용 팁</h3><ul><li>처음엔 하루 할 일 목표를 2~3개로 낮게 잡는 게 좋아요.</li><li>스마트폰은 하단 탭, 태블릿은 왼쪽 메뉴 중심으로 쓰면 편해요.</li><li>iPhone 가로모드가 안 되면 제어센터의 회전 잠금을 꺼주세요.</li><li>알림은 홈 화면에 추가한 PWA에서 가장 안정적으로 작동해요.</li></ul>`;
+    side.appendChild(card);
+  }
+
+  function iphoneLandscapeHelp(){
+    // iPhone Safari sometimes keeps old dimensions until resize/orientationchange settles.
+    if(!isIOS()) return;
+    const refresh = () => {
+      document.documentElement.style.setProperty('--tn-vh', `${innerHeight * 0.01}px`);
+      if(document.body.classList.contains('focus-mode-open')){
+        const fs = $('standbyFullscreen');
+        if(fs) fs.scrollTop = fs.scrollTop;
+      }
+    };
+    window.addEventListener('orientationchange', () => setTimeout(refresh, 350));
+    window.addEventListener('resize', () => setTimeout(refresh, 80));
+    refresh();
+  }
+
+  function boot(){
+    disableOldGuides();
+    setTimeout(installTutorialV6, 760);
+    installSettingsTipV6();
+    iphoneLandscapeHelp();
+    stabilizeFocusHint();
+    setInterval(stabilizeFocusHint, 250);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})();
+</script>
+
 </body>
 </html>

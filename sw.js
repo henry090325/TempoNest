@@ -1,4 +1,4 @@
-const TEMPO_CACHE = 'temponest-pwa-v1.2.3-mobile-ux-v4';
+const TEMPO_CACHE = 'temponest-mobile-v6';
 const APP_SHELL = [
   './',
   './index.html',
