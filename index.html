@@ -8855,5 +8855,417 @@ body.dark .tn-v6-card{border-color:rgba(255,255,255,.08)}
 })();
 </script>
 
+
+
+<style>
+/* =========================================================
+   Mobile UX Fix V7
+   - First launch flow: mode -> tips -> start.
+   - No in-app notification question; browser permission is requested automatically on first interaction.
+   - Dashboard focus hint is visually fixed to stop flicker.
+   ========================================================= */
+#launchFocusHint{display:none !important;}
+#launchFocusHintStable{
+  display:block;
+  color:inherit;
+  opacity:.78;
+  font-weight:850;
+  line-height:1.45;
+  margin-top:8px;
+}
+.tn-v7-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:240;
+  display:grid;
+  place-items:center;
+  padding:18px;
+  background:rgba(6,10,25,.52);
+  backdrop-filter:blur(22px);
+}
+.tn-v7-card{
+  width:min(720px,100%);
+  max-height:min(86vh,820px);
+  overflow:auto;
+  border:1px solid rgba(255,255,255,.58);
+  border-radius:34px;
+  padding:28px;
+  background:var(--card-strong,#fff);
+  box-shadow:0 30px 90px rgba(0,0,0,.28);
+}
+body.dark .tn-v7-card{border-color:rgba(255,255,255,.08);}
+.tn-v7-progress{display:flex;gap:7px;margin-bottom:18px;}
+.tn-v7-progress span{width:34px;height:7px;border-radius:99px;background:rgba(148,163,184,.22);}
+.tn-v7-progress span.active{background:linear-gradient(90deg,var(--blue,#3267f6),var(--purple,#8b5cf6));}
+.tn-v7-kicker{display:inline-flex;border-radius:999px;padding:8px 12px;background:rgba(50,103,246,.10);color:var(--blue,#3267f6);font-size:12px;font-weight:950;margin-bottom:14px;letter-spacing:.04em;text-transform:uppercase;}
+.tn-v7-card h2{margin:0 0 10px;font-size:clamp(28px,4vw,42px);line-height:1.12;font-weight:950;letter-spacing:-.045em;}
+.tn-v7-card p{margin:0 0 18px;color:var(--muted,#6f778a);font-size:15px;font-weight:780;line-height:1.6;word-break:keep-all;}
+.tn-v7-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px;}
+.tn-v7-option{border:1px solid var(--line,#e5ebf5);border-radius:22px;padding:17px;background:rgba(148,163,184,.07);text-align:left;color:var(--text,#101426);font-weight:900;transition:.16s ease;}
+.tn-v7-option.active{background:linear-gradient(135deg,rgba(50,103,246,.14),rgba(139,92,246,.10));border-color:rgba(50,103,246,.34);box-shadow:0 14px 30px rgba(50,103,246,.12);}
+.tn-v7-option strong{display:block;font-size:18px;font-weight:950;margin-bottom:7px;}
+.tn-v7-option span{display:block;color:var(--muted,#6f778a);font-size:13px;line-height:1.45;font-weight:800;}
+.tn-v7-tips{display:grid;gap:10px;margin-top:14px;}
+.tn-v7-tip{border:1px solid var(--line,#e5ebf5);border-radius:20px;padding:16px;background:rgba(148,163,184,.06);}
+.tn-v7-tip strong{display:block;font-size:16px;font-weight:950;margin-bottom:6px;}
+.tn-v7-tip span{display:block;color:var(--muted,#6f778a);font-size:13px;line-height:1.55;font-weight:800;}
+.tn-v7-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;}
+.tn-v7-actions .btn{min-width:104px;}
+@media(max-width:680px){
+  .tn-v7-card{border-radius:28px;padding:22px;}
+  .tn-v7-options{grid-template-columns:1fr;}
+  .tn-v7-actions{display:grid;grid-template-columns:1fr 1fr;}
+  .tn-v7-actions .btn{width:100%;}
+}
+</style>
+<script>
+/* Mobile UX Fix V7: mode-first tutorial and automatic native notification permission */
+(function(){
+  const $ = id => document.getElementById(id);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const store = {
+    get(k,f=null){try{return JSON.parse(localStorage.getItem(k) || 'null') ?? f}catch(e){return f}},
+    set(k,v){try{localStorage.setItem(k, JSON.stringify(v))}catch(e){}}
+  };
+  const modes = {
+    study:{title:'공부 모드', desc:'할 일과 집중 타이머를 중심으로 오늘 공부 흐름을 잡아요.', goals:{dailyFocusMinutes:60,dailyTodos:3}},
+    exam:{title:'시험 대비', desc:'과목별 할 일을 쪼개고, 여러 번 짧게 집중하기 좋아요.', goals:{dailyFocusMinutes:120,dailyTodos:5}},
+    life:{title:'생활 관리', desc:'일정, 날씨, 가벼운 할 일을 한 화면에서 확인해요.', goals:{dailyFocusMinutes:30,dailyTodos:2}},
+    clock:{title:'탁상 시계', desc:'기기를 세워두고 시계와 오늘 요약을 가볍게 보는 용도예요.', goals:{dailyFocusMinutes:25,dailyTodos:2}}
+  };
+  let step = 0;
+  let selectedMode = localStorage.getItem('ds.usageMode') || 'study';
+  let notificationTried = false;
+
+  function isPhone(){return /iPhone|iPod|Android.+Mobile/i.test(navigator.userAgent) || Math.min(innerWidth, innerHeight) < 620;}
+  function isIOS(){return /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);}
+
+  function applyMode(mode){
+    const data = modes[mode] || modes.study;
+    selectedMode = mode;
+    localStorage.setItem('ds.usageMode', mode);
+    store.set('ds.goals', data.goals);
+    if($('goalFocusMinutes')) $('goalFocusMinutes').value = data.goals.dailyFocusMinutes;
+    if($('goalDailyTodos')) $('goalDailyTodos').value = data.goals.dailyTodos;
+    $('goalApply')?.click();
+  }
+
+  async function requestNotificationPermissionAuto(){
+    if(notificationTried) return;
+    notificationTried = true;
+    try{
+      if(!('Notification' in window)) return;
+      if(Notification.permission === 'granted'){
+        localStorage.setItem('ds.dailyReminder.enabled','true');
+        return;
+      }
+      if(Notification.permission === 'denied'){
+        localStorage.setItem('ds.dailyReminder.enabled','false');
+        return;
+      }
+      const result = await Notification.requestPermission();
+      localStorage.setItem('ds.dailyReminder.enabled', result === 'granted' ? 'true' : 'false');
+      if(result === 'granted'){
+        try{
+          if(navigator.serviceWorker?.ready){
+            const reg = await navigator.serviceWorker.ready;
+            reg.showNotification('TempoNest 알림이 켜졌어요', {body:'내일 오전 8시에 오늘의 응원 문구를 보내볼게요.', tag:'temponest-permission-v7', icon:'icon-192.png', badge:'icon-192.png'});
+          }else{
+            new Notification('TempoNest 알림이 켜졌어요', {body:'내일 오전 8시에 오늘의 응원 문구를 보내볼게요.', tag:'temponest-permission-v7'});
+          }
+        }catch(e){}
+      }
+    }catch(e){
+      notificationTried = false;
+    }
+  }
+
+  function installAutoNotificationPrompt(){
+    // Native prompt only; no in-app question screen.
+    // Some browsers ignore this on page load, so we also attach it to the first tap.
+    setTimeout(requestNotificationPermissionAuto, 900);
+    window.addEventListener('pointerdown', requestNotificationPermissionAuto, {once:true, capture:true});
+    window.addEventListener('keydown', requestNotificationPermissionAuto, {once:true, capture:true});
+  }
+
+  function deviceTips(){
+    const modeTitle = (modes[selectedMode] || modes.study).title;
+    const base = isPhone()
+      ? [
+          ['하단 탭', '오늘 · 집중 · 할 일 · 통계로 빠르게 이동해요.'],
+          ['집중모드', 'iPhone은 회전 잠금이 켜져 있으면 가로 화면 감지가 늦거나 막힐 수 있어요.'],
+          ['설정', '오른쪽 위 ⚙︎에서 목표, 날씨 위치, 테마를 바꿀 수 있어요.']
+        ]
+      : [
+          ['대시보드', '태블릿은 세워두고 시계, 날씨, 할 일을 한 화면에서 보기 좋아요.'],
+          ['집중모드', '가로 화면에서는 스탠바이처럼 넓은 레이아웃으로 볼 수 있어요.'],
+          ['목표', '집중 시간과 할 일 목표를 정하면 통계와 하루 평가가 더 정확해져요.']
+        ];
+    const byMode = {
+      study:['공부 흐름', '가장 쉬운 할 일 하나부터 끝내고 타이머를 켜면 부담이 줄어요.'],
+      exam:['시험 루틴', '과목별로 할 일을 쪼개고 짧은 집중을 여러 번 반복해보세요.'],
+      life:['생활 루틴', '일정과 날씨를 먼저 보고 오늘 꼭 할 일만 2개 정도 잡아보세요.'],
+      clock:['탁상 시계', '충전 중인 기기에 띄워두고 시계와 오늘 요약만 가볍게 확인해요.']
+    }[selectedMode] || ['사용 팁','오늘 할 일을 하나만 정하고 시작해도 충분해요.'];
+    return [[modeTitle, (modes[selectedMode] || modes.study).desc], byMode, ...base];
+  }
+
+  function removeOldGuides(){
+    ['onboardingModal','tnTutorial','tnTutorialV6','tnTutorialV7'].forEach(id => $(id)?.remove());
+    localStorage.setItem('ds.onboarded.launch-v1','true');
+    localStorage.setItem('ds.tutorial.v4','true');
+    localStorage.setItem('ds.tutorial.v6','true');
+  }
+
+  function renderTutorial(){
+    let modal = $('tnTutorialV7');
+    if(!modal){
+      modal = document.createElement('div');
+      modal.className = 'tn-v7-backdrop';
+      modal.id = 'tnTutorialV7';
+      document.body.appendChild(modal);
+      modal.addEventListener('click', onClick);
+    }
+    const progress = [0,1].map(i => `<span class="${i<=step?'active':''}"></span>`).join('');
+    const body = step === 0 ? `
+      <div class="tn-v7-kicker">1 / 2 시작 모드</div>
+      <h2>어떤 방식으로 쓸까요?</h2>
+      <p>처음 사용할 모드를 고르면 목표와 화면 흐름을 그 용도에 맞춰 정리해둘게요.</p>
+      <div class="tn-v7-options">
+        ${Object.entries(modes).map(([key,m]) => `<button class="tn-v7-option ${key===selectedMode?'active':''}" type="button" data-v7-mode="${key}"><strong>${m.title}</strong><span>${m.desc}</span></button>`).join('')}
+      </div>` : `
+      <div class="tn-v7-kicker">2 / 2 사용 팁</div>
+      <h2>${isPhone() ? '모바일 사용 팁' : '태블릿 사용 팁'}</h2>
+      <p>알림은 따로 묻지 않고, 브라우저 기본 권한 창이 뜰 때 바로 허용하면 돼요.</p>
+      <div class="tn-v7-tips">
+        ${deviceTips().map(([a,b]) => `<div class="tn-v7-tip"><strong>${a}</strong><span>${b}</span></div>`).join('')}
+      </div>`;
+    modal.innerHTML = `<div class="tn-v7-card" role="dialog" aria-modal="true">
+      <div class="tn-v7-progress">${progress}</div>
+      ${body}
+      <div class="tn-v7-actions">
+        <button class="btn" type="button" data-v7-action="skip">건너뛰기</button>
+        <button class="btn" type="button" data-v7-action="back" ${step===0?'disabled':''}>이전</button>
+        <button class="btn primary" type="button" data-v7-action="next">${step===1?'시작하기':'다음'}</button>
+      </div>
+    </div>`;
+  }
+
+  function onClick(e){
+    requestNotificationPermissionAuto();
+    const mode = e.target.closest('[data-v7-mode]');
+    if(mode){ applyMode(mode.dataset.v7Mode); renderTutorial(); return; }
+    const action = e.target.closest('[data-v7-action]')?.dataset.v7Action;
+    if(!action) return;
+    if(action === 'skip'){ finish(false); return; }
+    if(action === 'back'){ step = Math.max(0, step-1); renderTutorial(); return; }
+    if(action === 'next'){
+      if(step === 0){ step = 1; renderTutorial(); }
+      else finish(true);
+    }
+  }
+
+  function finish(done){
+    applyMode(selectedMode);
+    localStorage.setItem('ds.tutorial.v7','true');
+    $('tnTutorialV7')?.remove();
+    requestNotificationPermissionAuto();
+    if(done && typeof showToast === 'function') showToast('시작 설정을 적용했습니다');
+  }
+
+  function installStableDashboardHint(){
+    const old = $('launchFocusHint');
+    if(!old || $('launchFocusHintStable')) return;
+    const stable = document.createElement('p');
+    stable.id = 'launchFocusHintStable';
+    stable.textContent = '할 일부터 차분히 시작해볼까요?';
+    old.insertAdjacentElement('afterend', stable);
+  }
+
+  function installSettingsTipV7(){
+    const old = $('settingsTipsV6');
+    if(old) old.remove();
+    if($('settingsTipsV7')) return;
+    const side = document.querySelector('#settingsScreen .side') || document.querySelector('#settingsScreen .panel');
+    if(!side) return;
+    const card = document.createElement('div');
+    card.className = 'card glass settings-tip-card';
+    card.id = 'settingsTipsV7';
+    card.innerHTML = `<h3>사용 팁</h3><ul><li>처음에는 모드만 고르면 목표가 자동으로 맞춰져요.</li><li>모바일은 하단 탭, 태블릿은 대시보드와 집중모드를 중심으로 쓰면 좋아요.</li><li>iPhone 가로 집중모드가 안 되면 회전 잠금을 끄고 홈 화면 PWA로 실행해보세요.</li><li>알림 권한 창이 뜨면 허용을 눌러야 타이머/아침 응원 알림을 받을 수 있어요.</li></ul>`;
+    side.appendChild(card);
+  }
+
+  function boot(){
+    removeOldGuides();
+    installAutoNotificationPrompt();
+    installStableDashboardHint();
+    installSettingsTipV7();
+    if(localStorage.getItem('ds.tutorial.v7') !== 'true') setTimeout(renderTutorial, 500);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})();
+</script>
+
+
+<style>
+/* =========================================================
+   Mobile UX Fix V8
+   - Center the "오늘 한눈에" focus slide on iPhone landscape.
+   - Keep focus content away from notch/safe-area and right dot rail.
+   ========================================================= */
+@media (max-width:940px) and (orientation:landscape){
+  .standby-fullscreen.show{
+    overflow:hidden !important;
+    padding:0 !important;
+  }
+  .standby-fullscreen.show .standby-content{
+    width:100vw !important;
+    max-width:none !important;
+    height:100dvh !important;
+    padding-left:max(34px, env(safe-area-inset-left)) !important;
+    padding-right:max(92px, calc(env(safe-area-inset-right) + 74px)) !important;
+    padding-top:max(10px, env(safe-area-inset-top)) !important;
+    padding-bottom:max(10px, env(safe-area-inset-bottom)) !important;
+    box-sizing:border-box !important;
+    overflow:hidden !important;
+  }
+  .standby-fullscreen.show .focus-slides-track{
+    width:100% !important;
+    height:100dvh !important;
+  }
+  .standby-fullscreen.show .focus-slide{
+    width:100% !important;
+    height:100dvh !important;
+    min-height:100dvh !important;
+    flex:0 0 100dvh !important;
+    box-sizing:border-box !important;
+    padding-left:0 !important;
+    padding-right:0 !important;
+  }
+
+  .standby-fullscreen.show .focus-slide[aria-label="집중모드 요약 카드"]{
+    display:flex !important;
+    flex-direction:column !important;
+    justify-content:center !important;
+    align-items:center !important;
+    gap:22px !important;
+    padding-top:26px !important;
+    padding-bottom:24px !important;
+    text-align:center !important;
+    overflow:hidden !important;
+  }
+  .standby-fullscreen.show .focus-slide[aria-label="집중모드 요약 카드"] .focus-slide-title{
+    width:100% !important;
+    max-width:min(1120px,100%) !important;
+    margin:0 auto 2px !important;
+    text-align:center !important;
+    font-size:clamp(34px,6.2vw,60px) !important;
+    line-height:1.04 !important;
+    transform:none !important;
+  }
+  .standby-fullscreen.show .focus-slide[aria-label="집중모드 요약 카드"] .standby-widgets{
+    width:min(1120px,100%) !important;
+    max-width:100% !important;
+    margin:0 auto !important;
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:16px !important;
+    align-items:stretch !important;
+    justify-content:center !important;
+    transform:none !important;
+  }
+  .standby-fullscreen.show .focus-slide[aria-label="집중모드 요약 카드"] .standby-widget{
+    min-width:0 !important;
+    min-height:154px !important;
+    padding:22px !important;
+    border-radius:26px !important;
+    text-align:left !important;
+    display:flex !important;
+    flex-direction:column !important;
+    justify-content:center !important;
+  }
+  .standby-fullscreen.show .focus-slide[aria-label="집중모드 요약 카드"] .standby-widget span{
+    font-size:14px !important;
+    margin-bottom:8px !important;
+  }
+  .standby-fullscreen.show .focus-slide[aria-label="집중모드 요약 카드"] .standby-widget strong{
+    font-size:clamp(38px,7vw,70px) !important;
+    line-height:.96 !important;
+    white-space:normal !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+  }
+  .standby-fullscreen.show .focus-slide[aria-label="집중모드 요약 카드"] .standby-widget p{
+    font-size:15px !important;
+    line-height:1.38 !important;
+    white-space:normal !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+  }
+  .standby-fullscreen.show .standby-close{
+    right:max(14px, env(safe-area-inset-right)) !important;
+    top:max(14px, env(safe-area-inset-top)) !important;
+    width:52px !important;
+    height:52px !important;
+    z-index:30 !important;
+  }
+  .standby-fullscreen.show .focus-dot-nav{
+    right:max(12px, calc(env(safe-area-inset-right) + 10px)) !important;
+    z-index:29 !important;
+  }
+}
+
+@media (max-width:720px) and (orientation:landscape){
+  .standby-fullscreen.show .standby-content{
+    padding-left:max(24px, env(safe-area-inset-left)) !important;
+    padding-right:max(74px, calc(env(safe-area-inset-right) + 60px)) !important;
+  }
+  .standby-fullscreen.show .focus-slide[aria-label="집중모드 요약 카드"]{
+    gap:14px !important;
+    padding-top:18px !important;
+    padding-bottom:18px !important;
+  }
+  .standby-fullscreen.show .focus-slide[aria-label="집중모드 요약 카드"] .focus-slide-title{
+    font-size:clamp(28px,5.5vw,44px) !important;
+  }
+  .standby-fullscreen.show .focus-slide[aria-label="집중모드 요약 카드"] .standby-widgets{
+    gap:10px !important;
+  }
+  .standby-fullscreen.show .focus-slide[aria-label="집중모드 요약 카드"] .standby-widget{
+    min-height:124px !important;
+    padding:15px !important;
+    border-radius:22px !important;
+  }
+  .standby-fullscreen.show .focus-slide[aria-label="집중모드 요약 카드"] .standby-widget strong{
+    font-size:clamp(30px,6vw,52px) !important;
+  }
+}
+</style>
+
+<script>
+/* Mobile UX Fix V8: recenter focus summary slide when iPhone/Safari changes viewport after rotation */
+(function(){
+  const $ = id => document.getElementById(id);
+  function recenterFocusSlide(){
+    const fs = $('standbyFullscreen');
+    const scroller = $('focusSlides');
+    if(!fs || !scroller || !fs.classList.contains('show')) return;
+    const dots = Array.from(document.querySelectorAll('.focus-dot'));
+    const current = Math.max(0, dots.findIndex(d => d.classList.contains('active')));
+    // Keep the active page aligned after iOS recalculates viewport/safe-area.
+    try{ scroller.scrollTo({top: current * scroller.clientHeight, behavior:'auto'}); }catch(e){ scroller.scrollTop = current * scroller.clientHeight; }
+  }
+  window.addEventListener('resize', () => setTimeout(recenterFocusSlide, 120));
+  window.addEventListener('orientationchange', () => setTimeout(recenterFocusSlide, 350));
+  document.addEventListener('visibilitychange', () => setTimeout(recenterFocusSlide, 120));
+  const prevOpen = window.openStandby;
+  window.openStandby = function(){
+    if(typeof prevOpen === 'function') prevOpen.apply(this, arguments);
+    setTimeout(recenterFocusSlide, 220);
+    setTimeout(recenterFocusSlide, 700);
+  };
+})();
+</script>
+
 </body>
 </html>
