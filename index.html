@@ -9360,5 +9360,614 @@ body.dark .tn-v9-actions{background:linear-gradient(180deg,rgba(28,37,58,.64),va
 })();
 </script>
 
+
+
+<style>
+/* =========================================================
+   Mobile UX Fix V10
+   - Onboarding buttons no longer overlap the bottom tabbar.
+   - Settings tips are consolidated into two compact cards.
+   - Mobile panels no longer leave huge blank spaces below content.
+   ========================================================= */
+.tn-v9-backdrop{
+  z-index:99999 !important;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px)) !important;
+}
+body.tn-onboarding-active .mobile-tabbar,
+body.tn-onboarding-active .topbar{
+  display:none !important;
+}
+body.tn-onboarding-active{
+  overflow:hidden !important;
+}
+.tn-v9-card{
+  max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) !important;
+  padding-bottom:0 !important;
+  overscroll-behavior:contain;
+}
+.tn-v9-actions{
+  position:sticky !important;
+  bottom:0 !important;
+  margin:20px -28px 0 !important;
+  padding:14px 28px calc(16px + env(safe-area-inset-bottom,0px)) !important;
+  z-index:4 !important;
+}
+@media(max-width:620px){
+  .tn-v9-card{padding:20px !important;padding-bottom:0 !important;border-radius:28px !important;}
+  .tn-v9-actions{
+    margin:18px -20px 0 !important;
+    padding:12px 20px calc(14px + env(safe-area-inset-bottom,0px)) !important;
+  }
+  .tn-v9-actions.single{grid-template-columns:1fr !important;}
+  .tn-v9-actions .btn{height:52px !important;border-radius:18px !important;}
+}
+
+@media(max-width:860px){
+  .app{
+    padding-top:calc(env(safe-area-inset-top,0px) + 12px) !important;
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 108px) !important;
+  }
+  .screen.active{
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 122px) !important;
+  }
+  #dashboardScreen .panel,
+  #tasksScreen .panel,
+  #statsScreen .panel,
+  #timerScreen .panel,
+  #settingsScreen .panel{
+    min-height:0 !important;
+    height:auto !important;
+    padding-bottom:24px !important;
+    margin-bottom:16px !important;
+  }
+  #dashboardScreen .side,
+  #tasksScreen .side,
+  #statsScreen .side,
+  #timerScreen .side,
+  #settingsScreen .side{
+    padding-bottom:0 !important;
+    margin-bottom:18px !important;
+  }
+  #tasksScreen .panel .soft-box,
+  #statsScreen .panel,
+  #statsScreen .card.glass,
+  #dashboardScreen .panel,
+  #dashboardScreen .card.glass{
+    min-height:0 !important;
+  }
+  #statsScreen .stat-box{
+    min-height:138px !important;
+    padding:22px !important;
+  }
+  #statsScreen .stats-grid{
+    gap:14px !important;
+    margin-top:14px !important;
+  }
+  #tasksScreen .selected-day-card{
+    margin-bottom:18px !important;
+  }
+  #timerScreen .timer-simple-card,
+  #timerScreen .card.glass{
+    min-height:0 !important;
+  }
+  #todaySummary,
+  #selectedTodoList{
+    padding-bottom:12px !important;
+  }
+  .mobile-tabbar{
+    z-index:950 !important;
+    bottom:calc(env(safe-area-inset-bottom,0px) + 10px) !important;
+  }
+}
+
+/* Settings tips: remove old stacked feel and replace with two clean cards */
+#settingsTipsCard,
+#settingsTipsV6,
+#settingsTipsV7{
+  display:none !important;
+}
+.settings-tips-v10{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  margin:0 0 18px !important;
+}
+.settings-tip-v10-card{
+  border:1px solid var(--line);
+  border-radius:26px;
+  padding:18px;
+  background:rgba(148,163,184,.07);
+  box-shadow:var(--shadow2);
+}
+.settings-tip-v10-card h3{
+  font-size:18px;
+  line-height:1.2;
+  font-weight:950;
+  margin:0 0 10px;
+}
+.settings-tip-v10-card ul{
+  margin:0;
+  padding-left:18px;
+  color:var(--muted);
+  font-size:14px;
+  font-weight:790;
+  line-height:1.55;
+  word-break:keep-all;
+}
+.settings-tip-v10-card li+li{margin-top:4px;}
+@media(max-width:860px){
+  .settings-tips-v10{grid-template-columns:1fr;gap:12px;margin-bottom:14px !important;}
+  .settings-tip-v10-card{padding:17px;border-radius:24px;}
+  .settings-tip-v10-card h3{font-size:17px;}
+  .settings-tip-v10-card ul{font-size:13.5px;line-height:1.55;}
+}
+</style>
+
+<script>
+/* V10: onboarding/tab overlap, compact mobile pages, and clean settings tips */
+(function(){
+  const $ = id => document.getElementById(id);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+  function syncOnboardingState(){
+    const open = !!$('tnStartOnboardingV9');
+    document.body.classList.toggle('tn-onboarding-active', open);
+  }
+
+  function installSettingsTipsV10(){
+    const side = document.querySelector('#settingsScreen .side');
+    if(!side) return;
+    ['settingsTipsCard','settingsTipsV6','settingsTipsV7'].forEach(id => $(id)?.remove());
+    if($('settingsTipsV10')) return;
+    const wrap = document.createElement('div');
+    wrap.id = 'settingsTipsV10';
+    wrap.className = 'settings-tips-v10';
+    wrap.innerHTML = `
+      <div class="settings-tip-v10-card">
+        <h3>처음 쓰는 팁</h3>
+        <ul>
+          <li>홈 화면에 추가하면 주소창 없이 앱처럼 쓸 수 있어요.</li>
+          <li>대시보드는 오늘 할 일, 날씨, 목표 진행률을 빠르게 보는 화면이에요.</li>
+          <li>처음엔 목표를 2~3개 정도로 낮게 잡는 게 좋아요.</li>
+        </ul>
+      </div>
+      <div class="settings-tip-v10-card">
+        <h3>집중·알림 팁</h3>
+        <ul>
+          <li>집중모드는 태블릿이나 휴대폰 가로 화면에서 보기 좋아요.</li>
+          <li>알림을 허용하면 타이머 종료와 아침 응원 문구를 받을 수 있어요.</li>
+          <li>날씨가 안 뜨면 설정에서 좌표를 다시 적용해보세요.</li>
+        </ul>
+      </div>`;
+    side.prepend(wrap);
+  }
+
+  function compactMobilePages(){
+    if(!window.matchMedia('(max-width: 860px)').matches) return;
+    const active = document.querySelector('.screen.active');
+    if(active){
+      active.style.paddingBottom = `calc(env(safe-area-inset-bottom, 0px) + 122px)`;
+    }
+    ['dashboardScreen','tasksScreen','statsScreen','timerScreen','settingsScreen'].forEach(id => {
+      const screen = $(id);
+      if(!screen) return;
+      const panel = screen.querySelector('.panel');
+      if(panel){
+        panel.style.minHeight = '0';
+        panel.style.height = 'auto';
+        panel.style.paddingBottom = '24px';
+      }
+    });
+  }
+
+  function makeOnboardingObserver(){
+    if(window.__tnV10Observer) return;
+    window.__tnV10Observer = new MutationObserver(() => {
+      syncOnboardingState();
+      installSettingsTipsV10();
+      compactMobilePages();
+    });
+    window.__tnV10Observer.observe(document.body, {childList:true, subtree:false});
+  }
+
+  function boot(){
+    syncOnboardingState();
+    installSettingsTipsV10();
+    compactMobilePages();
+    makeOnboardingObserver();
+  }
+
+  document.addEventListener('click', () => setTimeout(() => {syncOnboardingState(); compactMobilePages();}, 80), true);
+  window.addEventListener('resize', () => setTimeout(compactMobilePages, 120));
+  window.addEventListener('orientationchange', () => setTimeout(compactMobilePages, 320));
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  setTimeout(boot, 600);
+  setInterval(() => { syncOnboardingState(); installSettingsTipsV10(); compactMobilePages(); }, 1400);
+})();
+</script>
+
+
+
+<style>
+/* =========================================================
+   Mobile UX Fix V11
+   - Landing screen before onboarding.
+   - Feedback button and modal for friend testing.
+   - More varied daily evaluation copy.
+   ========================================================= */
+.tn-v11-landing-active #tnStartOnboardingV9,
+.tn-v11-landing-active #tnTutorialV7,
+.tn-v11-landing-active .tn-v9-backdrop,
+.tn-v11-landing-active .tn-v7-backdrop{
+  display:none !important;
+}
+.tn-v11-landing-backdrop,
+.tn-v11-feedback-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:100000;
+  display:grid;
+  place-items:center;
+  padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));
+  background:radial-gradient(circle at 74% 18%, rgba(139,92,246,.22), transparent 34%), rgba(7,10,24,.54);
+  backdrop-filter:blur(22px);
+}
+.tn-v11-landing-card,
+.tn-v11-feedback-card{
+  width:min(760px,100%);
+  max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+  overflow:auto;
+  border:1px solid rgba(255,255,255,.64);
+  border-radius:36px;
+  padding:30px;
+  background:var(--card-strong,#fff);
+  box-shadow:0 32px 96px rgba(0,0,0,.30);
+  color:var(--text,#101426);
+}
+body.dark .tn-v11-landing-card,
+body.dark .tn-v11-feedback-card{border-color:rgba(255,255,255,.09)}
+.tn-v11-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 13px;
+  border-radius:999px;
+  background:rgba(50,103,246,.10);
+  color:var(--blue,#3267f6);
+  font-size:12px;
+  font-weight:950;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  margin-bottom:16px;
+}
+.tn-v11-landing-card h1,
+.tn-v11-feedback-card h2{
+  margin:0 0 10px;
+  font-size:clamp(34px,6vw,62px);
+  line-height:1.06;
+  font-weight:950;
+  letter-spacing:-.06em;
+  word-break:keep-all;
+}
+.tn-v11-feedback-card h2{font-size:clamp(28px,4vw,42px)}
+.tn-v11-landing-card p,
+.tn-v11-feedback-card p{
+  margin:0;
+  color:var(--muted,#6f778a);
+  font-size:16px;
+  font-weight:800;
+  line-height:1.62;
+  word-break:keep-all;
+}
+.tn-v11-hero-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:22px 0 8px;
+}
+.tn-v11-hero-tile{
+  border:1px solid var(--line,#e5ebf5);
+  border-radius:24px;
+  padding:17px;
+  background:rgba(148,163,184,.07);
+}
+.tn-v11-hero-tile b{display:block;font-size:24px;line-height:1;margin-bottom:10px}
+.tn-v11-hero-tile strong{display:block;font-size:16px;font-weight:950;margin-bottom:5px;word-break:keep-all}
+.tn-v11-hero-tile span{display:block;color:var(--muted,#6f778a);font-size:12.5px;line-height:1.45;font-weight:800;word-break:keep-all}
+.tn-v11-actions{
+  position:sticky;
+  bottom:0;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+  margin:22px -30px -30px;
+  padding:14px 30px calc(18px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(180deg,rgba(255,255,255,0),var(--card-strong,#fff) 24%);
+  z-index:3;
+}
+body.dark .tn-v11-actions{background:linear-gradient(180deg,rgba(15,23,42,0),var(--card-strong,#0f172a) 24%)}
+.tn-v11-actions .btn{height:58px;border-radius:20px;font-size:16px;font-weight:950}
+.tn-v11-feedback-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:48px;
+  border-radius:18px;
+  border:1px solid var(--line,#e5ebf5);
+  background:rgba(148,163,184,.08);
+  color:var(--text,#101426);
+  font-weight:950;
+  padding:0 16px;
+  box-shadow:var(--shadow2,0 8px 22px rgba(30,46,82,.08));
+}
+.tn-v11-feedback-card textarea,
+.tn-v11-feedback-card select,
+.tn-v11-feedback-card input{
+  width:100%;
+  border:1px solid var(--line,#e5ebf5);
+  border-radius:18px;
+  background:rgba(148,163,184,.06);
+  color:var(--text,#101426);
+  font:inherit;
+  font-weight:800;
+  padding:14px 15px;
+  outline:none;
+  box-sizing:border-box;
+}
+.tn-v11-feedback-card textarea{min-height:150px;resize:vertical;line-height:1.55;margin-top:10px}
+.tn-v11-feedback-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 6px}
+.tn-v11-feedback-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:16px}
+.tn-v11-feedback-actions .btn{height:52px;border-radius:18px;font-weight:950}
+.tn-v11-feedback-card .tn-v11-close{position:absolute;opacity:0;pointer-events:none}
+.tn-v11-settings-card{
+  border:1px solid var(--line,#e5ebf5);
+  border-radius:28px;
+  padding:20px;
+  background:rgba(148,163,184,.07);
+  box-shadow:var(--shadow2,0 8px 22px rgba(30,46,82,.08));
+  margin:0 0 16px;
+}
+.tn-v11-settings-card h3{font-size:20px;font-weight:950;margin:0 0 8px}
+.tn-v11-settings-card p{color:var(--muted,#6f778a);font-size:14px;font-weight:800;line-height:1.55;margin:0 0 14px;word-break:keep-all}
+@media(max-width:680px){
+  .tn-v11-landing-backdrop,.tn-v11-feedback-backdrop{padding:calc(10px + env(safe-area-inset-top,0px)) 10px calc(10px + env(safe-area-inset-bottom,0px))}
+  .tn-v11-landing-card,.tn-v11-feedback-card{border-radius:30px;padding:22px;max-height:calc(100dvh - 20px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+  .tn-v11-landing-card h1{font-size:38px}
+  .tn-v11-hero-grid{grid-template-columns:1fr;gap:9px;margin-top:18px}
+  .tn-v11-hero-tile{padding:15px;border-radius:20px}
+  .tn-v11-actions{margin:18px -22px -22px;padding:12px 22px calc(14px + env(safe-area-inset-bottom,0px))}
+  .tn-v11-actions .btn{height:54px;border-radius:18px}
+  .tn-v11-feedback-grid,.tn-v11-feedback-actions{grid-template-columns:1fr}
+  .tn-v11-feedback-actions .btn{height:50px}
+}
+</style>
+
+<script>
+/* V11: landing, feedback flow, and varied daily evaluation */
+(function(){
+  const $ = id => document.getElementById(id);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+  function todayKeySafe(){
+    try{ if(typeof todayKey === 'function') return todayKey(); }catch(e){}
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function readJson(key, fallback){try{return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback}catch(e){return fallback}}
+  function escapeText(s){return String(s ?? '').replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+  function installLanding(){
+    if(localStorage.getItem('ds.landing.v11') === 'true' || $('tnLandingV11')) return;
+    document.body.classList.add('tn-v11-landing-active');
+    const modal = document.createElement('div');
+    modal.className = 'tn-v11-landing-backdrop';
+    modal.id = 'tnLandingV11';
+    modal.innerHTML = `
+      <div class="tn-v11-landing-card" role="dialog" aria-modal="true" aria-labelledby="tnLandingTitle">
+        <div class="tn-v11-badge">TempoNest PWA</div>
+        <h1 id="tnLandingTitle">하루를 한 화면에 정리해요</h1>
+        <p>시간, 할 일, 날씨, 집중 타이머를 한곳에 모은 감성 집중 대시보드예요. 친구들이 처음 들어와도 바로 어떤 앱인지 알 수 있게 랜딩 화면을 추가했어요.</p>
+        <div class="tn-v11-hero-grid">
+          <div class="tn-v11-hero-tile"><b>✓</b><strong>오늘 할 일</strong><span>해야 할 일을 빠르게 추가하고 진행률을 확인해요.</span></div>
+          <div class="tn-v11-hero-tile"><b>◴</b><strong>집중모드</strong><span>타이머와 하루 요약을 크게 띄워두고 몰입해요.</span></div>
+          <div class="tn-v11-hero-tile"><b>↗</b><strong>하루 평가</strong><span>완료율과 집중 시간에 맞춰 문구가 달라져요.</span></div>
+        </div>
+        <div class="tn-v11-actions">
+          <button class="btn primary" id="tnLandingStartV11" type="button">시작 설정으로 넘어가기</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    $('tnLandingStartV11')?.addEventListener('click', () => {
+      localStorage.setItem('ds.landing.v11','true');
+      modal.remove();
+      document.body.classList.remove('tn-v11-landing-active');
+      setTimeout(() => {
+        const old = $('tnStartOnboardingV9') || $('tnTutorialV7');
+        if(old) old.style.display = '';
+      }, 60);
+    });
+  }
+
+  function feedbackBody(){
+    const ua = navigator.userAgent || '';
+    const view = (typeof currentView !== 'undefined' ? currentView : document.querySelector('.screen.active')?.id || 'unknown');
+    return `TempoNest 피드백\n\n[화면]\n${view}\n\n[기기/브라우저]\n${ua}\n\n[피드백]\n`;
+  }
+
+  function openFeedback(){
+    $('tnFeedbackV11')?.remove();
+    const modal = document.createElement('div');
+    modal.className = 'tn-v11-feedback-backdrop';
+    modal.id = 'tnFeedbackV11';
+    modal.innerHTML = `
+      <div class="tn-v11-feedback-card" role="dialog" aria-modal="true" aria-labelledby="tnFeedbackTitle">
+        <div class="tn-v11-badge">Feedback</div>
+        <h2 id="tnFeedbackTitle">피드백 보내기</h2>
+        <p>친구들이 써보고 불편한 점이나 아이디어를 적은 뒤 복사하거나 공유할 수 있어요.</p>
+        <div class="tn-v11-feedback-grid">
+          <select id="tnFeedbackType">
+            <option>버그 제보</option>
+            <option>디자인 의견</option>
+            <option>기능 아이디어</option>
+            <option>칭찬/전체 후기</option>
+          </select>
+          <input id="tnFeedbackName" placeholder="이름 또는 닉네임" />
+        </div>
+        <textarea id="tnFeedbackText" placeholder="어떤 점이 불편했는지, 어떤 기능이 있으면 좋을지 적어주세요."></textarea>
+        <div class="tn-v11-feedback-actions">
+          <button class="btn" id="tnFeedbackClose" type="button">닫기</button>
+          <button class="btn" id="tnFeedbackCopy" type="button">복사</button>
+          <button class="btn primary" id="tnFeedbackShare" type="button">공유</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const build = () => {
+      const type = $('tnFeedbackType')?.value || '피드백';
+      const name = $('tnFeedbackName')?.value || '익명';
+      const text = $('tnFeedbackText')?.value || '';
+      return `${feedbackBody()}종류: ${type}\n작성자: ${name}\n내용: ${text}`;
+    };
+    $('tnFeedbackClose')?.addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
+    $('tnFeedbackCopy')?.addEventListener('click', async () => {
+      try{ await navigator.clipboard.writeText(build()); if(typeof showToast === 'function') showToast('피드백을 복사했습니다'); }
+      catch(e){ if(typeof showToast === 'function') showToast('복사에 실패했습니다'); }
+    });
+    $('tnFeedbackShare')?.addEventListener('click', async () => {
+      const text = build();
+      try{
+        if(navigator.share) await navigator.share({title:'TempoNest 피드백', text});
+        else { await navigator.clipboard.writeText(text); if(typeof showToast === 'function') showToast('공유 대신 피드백을 복사했습니다'); }
+      }catch(e){}
+    });
+  }
+
+  function installFeedbackButtons(){
+    const settingsSide = document.querySelector('#settingsScreen .side') || document.querySelector('#settingsScreen .panel');
+    if(settingsSide && !$('tnFeedbackSettingsV11')){
+      const card = document.createElement('div');
+      card.id = 'tnFeedbackSettingsV11';
+      card.className = 'tn-v11-settings-card';
+      card.innerHTML = `<h3>피드백</h3><p>친구들이 사용하면서 느낀 버그, 디자인 의견, 기능 아이디어를 바로 남길 수 있어요.</p><button class="tn-v11-feedback-btn" id="tnFeedbackOpenSettings" type="button">💬 피드백 남기기</button>`;
+      settingsSide.prepend(card);
+      $('tnFeedbackOpenSettings')?.addEventListener('click', openFeedback);
+    }
+    const topActions = document.querySelector('.top-actions');
+    if(topActions && !$('tnFeedbackTopV11')){
+      const btn = document.createElement('button');
+      btn.id = 'tnFeedbackTopV11';
+      btn.className = 'icon-btn';
+      btn.type = 'button';
+      btn.title = '피드백';
+      btn.textContent = '💬';
+      topActions.appendChild(btn);
+      btn.addEventListener('click', openFeedback);
+    }
+  }
+
+  const evalPhrases = {
+    empty:[
+      ['오늘은 비어 있어요','할 일 하나만 적어도 하루 흐름이 훨씬 또렷해져요.'],
+      ['아직 준비 중이에요','오늘 꼭 해야 할 일 1개부터 가볍게 적어보세요.'],
+      ['계획을 기다리는 중','작은 할 일 하나가 오늘의 시작점이 될 수 있어요.']
+    ],
+    zero:[
+      ['천천히 시작해도 돼요','아직 완료한 일은 없지만, 가장 쉬운 것부터 체크해보면 좋아요.'],
+      ['시작 전이에요','지금 하나만 처리해도 오늘 진행률이 바로 올라가요.'],
+      ['가볍게 몸풀기','할 일을 크게 보지 말고 10분 안에 끝나는 것부터 해봐요.']
+    ],
+    low:[
+      ['시작은 했어요','아직 많이 남았지만 괜찮아요. 가장 쉬운 일 하나부터 이어가보세요.'],
+      ['첫 발은 뗐어요','완벽하지 않아도 괜찮아요. 다음 하나만 더 체크해봐요.'],
+      ['흐름을 만드는 중','작게라도 움직인 게 중요해요. 한 번 더 이어가면 좋아요.']
+    ],
+    mid:[
+      ['조금씩 진행 중이에요','남은 일이 있지만 이미 흐름은 잡혔어요. 하나만 더 끝내봐요.'],
+      ['괜찮은 페이스예요','중간까지 온 것만으로도 좋아요. 급하지 않게 이어가요.'],
+      ['집중이 붙고 있어요','지금 페이스면 충분해요. 쉬운 것부터 정리해보세요.']
+    ],
+    good:[
+      ['꽤 잘 진행했어요','절반 이상 해냈어요. 지금 흐름이면 충분히 좋은 하루입니다.'],
+      ['오늘 페이스 좋아요','중요한 부분은 많이 지나왔어요. 남은 건 차분히 정리하면 돼요.'],
+      ['탄력이 붙었어요','완료한 일이 쌓이고 있어요. 마지막까지 부담 없이 가봐요.']
+    ],
+    great:[
+      ['거의 다 해냈어요','오늘 계획의 대부분을 끝냈어요. 남은 건 가볍게 정리만 하면 좋아요.'],
+      ['마무리 단계예요','이 정도면 충분히 잘하고 있어요. 남은 일은 짧게 끝내봐요.'],
+      ['좋은 하루예요','계획을 꽤 잘 지켰어요. 이제 마무리만 하면 됩니다.']
+    ],
+    perfect:[
+      ['완벽하게 마무리했어요','오늘 할 일을 전부 끝냈어요. 이 정도면 충분히 잘한 하루예요.'],
+      ['오늘은 깔끔했어요','계획한 일을 모두 정리했어요. 이제 편하게 쉬어도 좋아요.'],
+      ['수고했어요','오늘 목표를 다 끝냈어요. 스스로 칭찬해도 되는 하루예요.']
+    ]
+  };
+
+  function pickPhrase(bucket, score){
+    const arr = evalPhrases[bucket] || evalPhrases.mid;
+    const key = todayKeySafe().split('-').join('');
+    const idx = (Number(key) + Number(score || 0)) % arr.length;
+    return arr[idx];
+  }
+
+  function computeEvaluation(){
+    const key = todayKeySafe();
+    const todoStore = (typeof todos !== 'undefined' ? todos : readJson('ds.todos', {})) || {};
+    const items = todoStore[key] || [];
+    const total = items.length;
+    const done = items.filter(t => t.done).length;
+    const focusMinutes = typeof stats !== 'undefined' ? Math.floor((stats.focusSeconds || 0) / 60) : 0;
+    if(total === 0){ const [title,text] = pickPhrase('empty',0); return {score:0, grade:'대기', title, text, done, total, focusMinutes}; }
+    const taskPct = Math.round(done / total * 100);
+    const focusBonus = Math.min(10, Math.floor(focusMinutes / 15) * 2);
+    const score = Math.min(100, Math.round(taskPct * 0.9 + focusBonus));
+    const bucket = score >= 100 ? 'perfect' : score >= 80 ? 'great' : score >= 60 ? 'good' : score >= 35 ? 'mid' : score > 0 ? 'low' : 'zero';
+    const [title,text] = pickPhrase(bucket, score);
+    const grade = score >= 100 ? 'S' : score >= 80 ? 'A' : score >= 60 ? 'B' : score >= 35 ? 'C' : score > 0 ? 'D' : '대기';
+    return {score, grade, title, text, done, total, focusMinutes};
+  }
+
+  function applyDiverseEvaluation(){
+    const ev = computeEvaluation();
+    if($('todayEvalTitle')) $('todayEvalTitle').textContent = ev.title;
+    if($('todayEvalText')) $('todayEvalText').textContent = ev.text;
+    if($('todayEvalScore')) $('todayEvalScore').textContent = ev.total === 0 ? ev.grade : `${ev.score}점`;
+    if($('todayEvalBar')) $('todayEvalBar').style.width = `${ev.total === 0 ? 0 : ev.score}%`;
+    if($('todayEvalTodoMeta')) $('todayEvalTodoMeta').textContent = `할 일 ${ev.done}/${ev.total}`;
+    if($('todayEvalFocusMeta')) $('todayEvalFocusMeta').textContent = `집중 ${ev.focusMinutes}분`;
+    if($('focusDailyGrade')) $('focusDailyGrade').textContent = ev.total === 0 ? ev.grade : `${ev.score}점`;
+    if($('focusDailyMessage')) $('focusDailyMessage').textContent = ev.text;
+    if($('focusDailyEvalBar')) $('focusDailyEvalBar').style.width = `${ev.total === 0 ? 0 : ev.score}%`;
+  }
+
+  function patchRenderStats(){
+    try{
+      const prev = renderStats;
+      if(prev && !window.__tnV11RenderStatsPatched){
+        renderStats = function(){ prev(); setTimeout(applyDiverseEvaluation, 0); };
+        window.__tnV11RenderStatsPatched = true;
+      }
+    }catch(e){}
+  }
+
+  function boot(){
+    installLanding();
+    installFeedbackButtons();
+    patchRenderStats();
+    applyDiverseEvaluation();
+  }
+  document.addEventListener('click', e => {
+    if(e.target.closest('[data-view="settings"], #tnFeedbackTopV11')) setTimeout(installFeedbackButtons, 120);
+    setTimeout(applyDiverseEvaluation, 80);
+  }, true);
+  window.addEventListener('resize', () => setTimeout(installFeedbackButtons, 160));
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  setTimeout(boot, 700);
+  setInterval(() => {installFeedbackButtons(); applyDiverseEvaluation();}, 1600);
+})();
+</script>
+
 </body>
 </html>
