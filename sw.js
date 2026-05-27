@@ -1,4 +1,4 @@
-const TEMPO_CACHE = 'temponest-pwa-v1.0.0';
+const TEMPO_CACHE = 'temponest-pwa-v1.2.1-mobile-layout-fix';
 const APP_SHELL = [
   './',
   './index.html',
@@ -9,13 +9,18 @@ const APP_SHELL = [
   './icons/maskable-512.png',
   './icons/apple-touch-icon.png',
   './screenshots/screenshot-wide.png',
-  './screenshots/screenshot-narrow.png'
+  './screenshots/screenshot-narrow.png',
+  './icon-192.png',
+  './icon-512.png',
+  './maskable-192.png',
+  './maskable-512.png',
+  './apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(TEMPO_CACHE)
-      .then((cache) => cache.addAll(APP_SHELL))
+      .then((cache) => Promise.allSettled(APP_SHELL.map((url) => cache.add(url))))
       .then(() => self.skipWaiting())
   );
 });
