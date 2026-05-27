@@ -1,4 +1,4 @@
-const TEMPO_CACHE = 'temponest-pwa-v1.2.2-mobile-ux-v3';
+const TEMPO_CACHE = 'temponest-pwa-v1.2.3-mobile-ux-v4';
 const APP_SHELL = [
   './',
   './index.html',
@@ -81,4 +81,14 @@ self.addEventListener('notificationclick', (event) => {
     }
     if(clients.openWindow) return clients.openWindow('./');
   })());
+});
+
+
+self.addEventListener('message', (event) => {
+  const data = event.data || {};
+  if(data.type === 'SHOW_NOTIFICATION'){
+    const title = data.title || 'TempoNest';
+    const options = data.options || { body: '알림이 도착했습니다.' };
+    event.waitUntil(self.registration.showNotification(title, options));
+  }
 });

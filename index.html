@@ -7894,5 +7894,396 @@ body.dark .mobile-notify-shortcut{background:rgba(255,255,255,.05)}
 })();
 </script>
 
+
+
+<style>
+/* =========================================================
+   46. MOBILE UX FIX V4
+   - Remove forced phone rotation for focus mode.
+   - Hide mobile theme / notification top shortcuts; keep settings.
+   - Improve phone landscape nav and settings/task card layout.
+   - Add first-use tutorial + settings tips via JS.
+   ========================================================= */
+@media (max-width:860px){
+  /* top bar: less crowded */
+  #quickTheme,
+  #mobileNotifyShortcut{
+    display:none !important;
+  }
+  .topbar{
+    gap:10px !important;
+    overflow:visible !important;
+  }
+  .topbar-left{flex:1 1 auto !important;min-width:0 !important;}
+  .title-stack{min-width:0 !important;max-width:none !important;}
+  .app-title{max-width:none !important;font-size:19px !important;letter-spacing:-.035em !important;}
+  .app-subtitle{font-size:12px !important;}
+  .top-actions{flex:0 0 auto !important;gap:6px !important;}
+  .mobile-settings-shortcut{
+    display:inline-flex !important;
+    width:44px !important;
+    height:44px !important;
+    min-width:44px !important;
+    flex:0 0 44px !important;
+  }
+
+  /* Settings page overlap fix */
+  #settingsScreen.screen.active{display:block !important;}
+  #settingsScreen .panel{padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 158px) !important;overflow:visible !important;}
+  #settingsScreen .side{display:flex !important;flex-direction:column !important;gap:14px !important;margin-top:16px !important;min-width:0 !important;width:100% !important;}
+  #settingsScreen .section-head{display:block !important;}
+  #settingsScreen .setting-item{display:block !important;min-height:auto !important;overflow:visible !important;}
+  #settingsScreen .setting-item > * + *{margin-top:12px !important;}
+  #settingsScreen .theme-setting{display:block !important;grid-template-columns:1fr !important;}
+  #settingsScreen .theme-picker-card,
+  #settingsScreen .theme-preview-card,
+  #settingsScreen .card,
+  #settingsScreen .settings-section-card{width:100% !important;max-width:100% !important;overflow:visible !important;}
+  #settingsScreen .theme-chip-grid{grid-template-columns:1fr 1fr !important;}
+  #settingsScreen .theme-preview-hero{min-height:138px !important;border-radius:24px !important;}
+
+  /* Tasks selected-day card: stack actions cleanly */
+  #tasksScreen .selected-day-card{overflow:visible !important;}
+  #tasksScreen .selected-day-card .todo-head{display:flex !important;flex-direction:column !important;align-items:stretch !important;gap:12px !important;}
+  #tasksScreen .selected-day-card .todo-head > div{width:100% !important;}
+  #tasksScreen .selected-date-actions{display:grid !important;grid-template-columns:1fr 1fr !important;gap:10px !important;width:100% !important;margin:0 !important;}
+  #tasksScreen .selected-date-actions .btn{width:100% !important;min-height:44px !important;}
+  #tasksScreen .section-head .task-add-actions{display:none !important;}
+  #tasksScreen .selected-day-section{overflow:visible !important;}
+}
+
+/* Phone landscape: right side rail, not a giant bottom bar */
+@media (orientation:landscape) and (max-width:1024px){
+  .app{
+    grid-template-columns:1fr !important;
+    width:100% !important;
+    padding:14px 72px 14px 14px !important;
+  }
+  .sidebar,.drawer-scrim,.hamburger{display:none !important;}
+  .topbar{position:relative !important;top:auto !important;margin:0 0 14px !important;}
+  .screen.active{display:block !important;}
+  .panel{min-height:auto !important;padding:22px !important;padding-bottom:34px !important;}
+  .side{display:flex !important;flex-direction:column !important;gap:16px !important;margin-top:16px !important;}
+  .mobile-tabbar{
+    position:fixed !important;
+    left:auto !important;
+    right:9px !important;
+    top:50% !important;
+    bottom:auto !important;
+    transform:translateY(-50%) !important;
+    width:54px !important;
+    max-height:calc(100dvh - 18px) !important;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:5px !important;
+    padding:6px !important;
+    border-radius:22px !important;
+    z-index:999 !important;
+  }
+  .mobile-tab{min-height:44px !important;border-radius:15px !important;font-size:8px !important;gap:2px !important;}
+  .mobile-tab b{font-size:15px !important;}
+}
+
+/* Focus mode: no fake portrait rotation. Portrait remains vertical; real landscape becomes tablet-like horizontal. */
+.standby-fullscreen.show.phone-rotate-standby .standby-content{
+  transform:none !important;
+  width:100% !important;
+  height:100% !important;
+  margin:0 !important;
+}
+.standby-fullscreen.show.phone-rotate-standby .focus-slide{
+  transform:none !important;
+}
+@media (max-width:860px) and (orientation:portrait){
+  .standby-fullscreen.show{overflow:hidden !important;}
+  .standby-fullscreen.show .standby-content{
+    display:block !important;
+    width:100dvw !important;
+    height:100dvh !important;
+    padding:0 14px !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    scroll-snap-type:y mandatory !important;
+  }
+  .standby-fullscreen.show .focus-slide{
+    width:100% !important;
+    min-height:100dvh !important;
+    height:auto !important;
+    padding:74px 0 44px !important;
+    box-sizing:border-box !important;
+  }
+  .standby-fullscreen.show .focus-device-screen{
+    grid-template-columns:1fr !important;
+    min-height:auto !important;
+    height:auto !important;
+    padding:18px !important;
+    border-radius:32px !important;
+  }
+  .standby-fullscreen.show .focus-clock-face{width:min(70vw,310px) !important;}
+  .standby-fullscreen.show .standby-close{right:16px !important;top:16px !important;}
+}
+@media (orientation:landscape) and (max-width:1024px){
+  body.focus-mode-open .mobile-tabbar{display:none !important;}
+  .standby-fullscreen.show{overflow:hidden !important;}
+  .standby-fullscreen.show .standby-content{
+    display:flex !important;
+    flex-direction:row !important;
+    width:100dvw !important;
+    height:100dvh !important;
+    padding:0 !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    scroll-snap-type:x mandatory !important;
+    scroll-behavior:smooth !important;
+  }
+  .standby-fullscreen.show .focus-slide{
+    flex:0 0 100dvw !important;
+    width:100dvw !important;
+    min-width:100dvw !important;
+    height:100dvh !important;
+    min-height:100dvh !important;
+    scroll-snap-align:start !important;
+    padding:12px 58px 12px 14px !important;
+    box-sizing:border-box !important;
+    display:flex !important;
+    justify-content:center !important;
+  }
+  .standby-fullscreen.show .focus-device-wrap{width:min(1120px,100%) !important;}
+  .standby-fullscreen.show .focus-device-screen{
+    grid-template-columns:minmax(0,.95fr) minmax(320px,.9fr) !important;
+    gap:12px !important;
+    min-height:calc(100dvh - 24px) !important;
+    height:calc(100dvh - 24px) !important;
+    padding:16px !important;
+    border-radius:34px !important;
+  }
+  .standby-fullscreen.show .focus-clock-face{width:min(44dvh,245px) !important;}
+  .standby-fullscreen.show .focus-calendar-grid span,
+  .standby-fullscreen.show .focus-calendar-grid button{height:22px !important;min-height:22px !important;font-size:10px !important;}
+  .standby-fullscreen.show .standby-close{right:10px !important;top:10px !important;width:42px !important;height:42px !important;border-radius:15px !important;}
+  .standby-fullscreen.show .focus-dot-nav{right:10px !important;top:50% !important;transform:translateY(-50%) !important;}
+}
+
+/* Tutorial and settings tips */
+.tn-tutorial-backdrop{position:fixed;inset:0;z-index:260;display:grid;place-items:center;padding:18px;background:rgba(5,8,18,.48);backdrop-filter:blur(18px)}
+.tn-tutorial-card{width:min(620px,100%);border-radius:32px;padding:26px;background:var(--card-strong);box-shadow:0 30px 90px rgba(0,0,0,.26);border:1px solid rgba(255,255,255,.55)}
+body.dark .tn-tutorial-card{border-color:rgba(255,255,255,.08)}
+.tn-tutorial-kicker{display:inline-flex;border-radius:999px;padding:8px 12px;background:rgba(50,103,246,.10);color:var(--blue);font-size:12px;font-weight:950;margin-bottom:12px}
+.tn-tutorial-card h2{font-size:28px;line-height:1.15;margin:0 0 8px;font-weight:950;letter-spacing:-.04em}.tn-tutorial-card p{color:var(--muted);font-weight:780;line-height:1.55;margin:0 0 16px}.tn-tutorial-steps{display:grid;gap:10px;margin:16px 0}.tn-tutorial-step{border:1px solid var(--line);border-radius:18px;padding:14px;background:rgba(148,163,184,.07)}.tn-tutorial-step strong{display:block;font-size:15px;margin-bottom:5px}.tn-tutorial-step span{display:block;color:var(--muted);font-size:13px;font-weight:780;line-height:1.45}.tn-tutorial-actions{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:18px}.settings-tip-card{border:1px solid var(--line);border-radius:24px;padding:18px;background:rgba(148,163,184,.07)}.settings-tip-card h3{font-size:18px;font-weight:950;margin-bottom:10px}.settings-tip-card ul{margin:0;padding-left:18px;color:var(--muted);font-weight:780;line-height:1.55;font-size:14px}
+@media(max-width:560px){.tn-tutorial-card{padding:22px;border-radius:28px}.tn-tutorial-actions{grid-template-columns:1fr}.tn-tutorial-card h2{font-size:24px}}
+</style>
+
+<script>
+/* Mobile UX Fix V4: tutorial, no forced rotate, auto permission attempt, daily reminders, settings tips */
+(function(){
+  const $ = id => document.getElementById(id);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const isPhone = () => Math.min(window.innerWidth, window.innerHeight) <= 760;
+  const isTablet = () => !isPhone() && Math.min(window.innerWidth, window.innerHeight) <= 1100;
+  const dayKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+  function show(msg){ try{ if(typeof showToast === 'function') showToast(msg); else console.log(msg); }catch(e){ console.log(msg); } }
+
+  /* Keep focus mode from fake-rotating portrait phones. */
+  function disableFakeRotate(){
+    const fs = $('standbyFullscreen');
+    if(fs) fs.classList.remove('phone-rotate-standby');
+    document.body.classList.remove('phone-standby-active');
+    try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){}
+  }
+  function patchStandbyNoAutoRotate(){
+    try{
+      const prev = window.openStandby || openStandby;
+      if(prev && !prev.__tnV4NoRotate){
+        const patched = function(){
+          const result = prev.apply(this, arguments);
+          [40,180,420,900].forEach(ms => setTimeout(disableFakeRotate, ms));
+          return result;
+        };
+        patched.__tnV4NoRotate = true;
+        window.openStandby = patched;
+        openStandby = patched;
+      }
+    }catch(e){}
+  }
+
+  function hardSwitch(view){
+    try{ if(typeof switchView === 'function') switchView(view); }catch(e){}
+    const map = {dashboard:'dashboardScreen',timer:'timerScreen',tasks:'tasksScreen',stats:'statsScreen',settings:'settingsScreen',clock:'clockScreen',alarm:'alarmScreen'};
+    if(map[view]){
+      $$('.screen').forEach(s => s.classList.remove('active'));
+      $(map[view])?.classList.add('active');
+      try{ currentView = view; }catch(e){}
+      document.body.dataset.activeView = view;
+      $$('.mobile-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.mobileView === view));
+      $$('.nav-item').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
+      try{ window.scrollTo({top:0, behavior:'instant'}); }catch(e){ window.scrollTo(0,0); }
+    }
+  }
+
+  function cleanTopbar(){
+    const theme = $('quickTheme');
+    if(theme && window.matchMedia('(max-width: 860px)').matches) theme.style.display = 'none';
+    const notify = $('mobileNotifyShortcut');
+    if(notify) notify.style.display = 'none';
+    let settingsBtn = $('mobileSettingsShortcut');
+    const topActions = document.querySelector('.top-actions');
+    if(topActions && !settingsBtn){
+      settingsBtn = document.createElement('button');
+      settingsBtn.className = 'mobile-settings-shortcut';
+      settingsBtn.id = 'mobileSettingsShortcut';
+      settingsBtn.type = 'button';
+      settingsBtn.title = '설정';
+      settingsBtn.setAttribute('aria-label','설정으로 이동');
+      settingsBtn.textContent = '⚙︎';
+      topActions.appendChild(settingsBtn);
+    }
+    if(settingsBtn && !settingsBtn.__tnV4){
+      settingsBtn.__tnV4 = true;
+      settingsBtn.addEventListener('click', e => { e.preventDefault(); hardSwitch('settings'); });
+    }
+  }
+
+  async function showAppNotification(title, body, tag='temponest'){
+    if(!('Notification' in window) || Notification.permission !== 'granted') return false;
+    const data = {body, icon:'icons/icon-192.png', badge:'icons/maskable-192.png', tag};
+    try{
+      const reg = await navigator.serviceWorker?.ready;
+      if(reg?.showNotification){ await reg.showNotification(title, data); return true; }
+    }catch(e){}
+    try{ new Notification(title, data); return true; }catch(e){ return false; }
+  }
+
+  async function requestNotificationsSilently(){
+    if(!('Notification' in window)) return;
+    if(Notification.permission !== 'default') return;
+    try{
+      const result = await Notification.requestPermission();
+      if(result === 'granted'){
+        show('알림이 켜졌습니다');
+        showAppNotification('TempoNest 알림 켜짐', '매일 아침과 타이머 종료를 알려드릴게요.', 'temponest-permission');
+      }
+    }catch(e){}
+  }
+
+  function installPermissionAutoAttempt(){
+    // Some browsers ignore auto permission requests. Try once on load, then on the first real touch/click without a separate bell button.
+    setTimeout(requestNotificationsSilently, 800);
+    const once = () => { requestNotificationsSilently(); cleanup(); };
+    const cleanup = () => ['pointerdown','touchend','click','keydown'].forEach(t => window.removeEventListener(t, once, true));
+    ['pointerdown','touchend','click','keydown'].forEach(t => window.addEventListener(t, once, {capture:true, once:true, passive:true}));
+  }
+
+  const weekdayMessages = [
+    ['일요일이에요', '가볍게 정리하고 다음 주를 준비해봐요.'],
+    ['월요일 시작!', '작은 할 일 하나부터 시작해보자.'],
+    ['화요일도 힘내요', '흐름을 잡으면 오늘이 훨씬 쉬워져요.'],
+    ['수요일 중간 점검', '절반 왔어요. 오늘도 차분히 가보자.'],
+    ['목요일 집중 모드', '마무리할 일을 하나 정해서 시작해봐요.'],
+    ['금요일이에요', '이번 주를 기분 좋게 마무리해봐요.'],
+    ['토요일은 여유롭게', '해야 할 일은 짧게, 쉬는 시간은 충분히.']
+  ];
+  function scheduleDailyReminder(){
+    const tick = () => {
+      const now = new Date();
+      if(now.getHours() !== 8) return;
+      const key = dayKey(now);
+      if(localStorage.getItem('ds.dailyReminder.last') === key) return;
+      localStorage.setItem('ds.dailyReminder.last', key);
+      const [title, body] = weekdayMessages[now.getDay()];
+      showAppNotification(title, body, `temponest-daily-${key}`);
+    };
+    tick();
+    setInterval(tick, 60 * 1000);
+  }
+
+  function installTutorial(){
+    // Prevent the old generic onboarding from stacking with the new tutorial.
+    try{ localStorage.setItem('ds.onboarded.launch-v1', 'true'); }catch(e){}
+    const old = $('onboardingModal');
+    if(old) old.remove();
+    if(localStorage.getItem('ds.tutorial.v4') === 'true' || $('tnTutorial')) return;
+
+    const mode = isPhone() ? 'phone' : (isTablet() ? 'tablet' : 'desktop');
+    const steps = mode === 'phone' ? [
+      ['하단 메뉴', '오늘·집중·할 일·통계를 아래 탭에서 바로 이동해요. 설정은 위쪽 ⚙︎ 버튼이에요.'],
+      ['집중모드', '세로 화면에서는 세로 카드로, 휴대폰을 가로로 돌리면 태블릿처럼 넓게 보여요.'],
+      ['알림', '허용하면 타이머 종료와 아침 8시 응원 알림을 받을 수 있어요.']
+    ] : [
+      ['대시보드', '시계, 날씨, 음악, 할 일을 한 화면에서 확인해요.'],
+      ['집중모드', '태블릿은 세워두고 쓰기 좋게 큰 시계와 캘린더를 보여줘요.'],
+      ['설정과 팁', '목표, 테마, 알림, 날씨 좌표를 설정 화면에서 조정할 수 있어요.']
+    ];
+    const modal = document.createElement('div');
+    modal.className = 'tn-tutorial-backdrop';
+    modal.id = 'tnTutorial';
+    modal.innerHTML = `
+      <div class="tn-tutorial-card" role="dialog" aria-modal="true" aria-labelledby="tnTutorialTitle">
+        <div class="tn-tutorial-kicker">TempoNest 사용 튜토리얼</div>
+        <h2 id="tnTutorialTitle">${mode === 'phone' ? '모바일 사용법' : '태블릿 사용법'}</h2>
+        <p>처음 사용할 때 필요한 기능만 빠르게 안내할게요.</p>
+        <div class="tn-tutorial-steps">
+          ${steps.map(([a,b]) => `<div class="tn-tutorial-step"><strong>${a}</strong><span>${b}</span></div>`).join('')}
+        </div>
+        <div class="tn-tutorial-actions">
+          <button class="btn" type="button" id="tnTutorialLater">나중에</button>
+          <button class="btn primary" type="button" id="tnTutorialStart">시작하기</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = async (askNotify) => {
+      localStorage.setItem('ds.tutorial.v4','true');
+      modal.remove();
+      if(askNotify) await requestNotificationsSilently();
+    };
+    $('tnTutorialLater')?.addEventListener('click', () => close(false));
+    $('tnTutorialStart')?.addEventListener('click', () => close(true));
+  }
+
+  function installSettingsTips(){
+    const side = document.querySelector('#settingsScreen .side');
+    if(!side || $('settingsTipsCard')) return;
+    const card = document.createElement('div');
+    card.className = 'settings-tip-card';
+    card.id = 'settingsTipsCard';
+    card.innerHTML = `
+      <h3>사용 팁</h3>
+      <ul>
+        <li>홈 화면에 추가하면 주소창 없이 앱처럼 쓸 수 있어요.</li>
+        <li>휴대폰은 가로로 돌리면 집중모드가 넓은 화면으로 바뀌어요.</li>
+        <li>알림을 허용하면 타이머 종료와 아침 8시 응원 문구를 받을 수 있어요.</li>
+        <li>날씨가 안 뜨면 설정에서 좌표를 다시 적용해보세요.</li>
+      </ul>`;
+    side.prepend(card);
+  }
+
+  function forceTaskLayout(){
+    const actions = document.querySelector('#tasksScreen .selected-date-actions');
+    if(actions){
+      actions.style.display = 'grid';
+      actions.style.gridTemplateColumns = '1fr 1fr';
+      actions.style.width = '100%';
+    }
+  }
+
+  function boot(){
+    patchStandbyNoAutoRotate();
+    disableFakeRotate();
+    cleanTopbar();
+    installSettingsTips();
+    forceTaskLayout();
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  setTimeout(() => { boot(); installTutorial(); }, 450);
+  installPermissionAutoAttempt();
+  scheduleDailyReminder();
+  window.addEventListener('resize', () => setTimeout(boot, 120));
+  window.addEventListener('orientationchange', () => setTimeout(() => { boot(); disableFakeRotate(); }, 360));
+  setInterval(boot, 1500);
+})();
+</script>
+
 </body>
 </html>
