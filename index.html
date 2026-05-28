@@ -4092,6 +4092,24 @@
               <div class="selected-date-actions"><button class="btn small" data-open-schedule="selected">+ 일정</button><button class="btn small primary" data-open-task="selected">+ 할 일</button></div>
             </div>
 
+            <div class="selected-day-memo-card">
+              <div class="selected-day-memo-head">
+                <div>
+                  <strong>선택한 날짜 메모</strong>
+                  <span id="selectedDateMemoState">자동 저장</span>
+                </div>
+                <em id="selectedDateMemoCount">0자</em>
+              </div>
+              <textarea class="input selected-date-memo-input" id="selectedDateMemoInput" rows="4" placeholder="이 날짜에 기억할 메모를 적어보세요.
+예: 시험 범위 확인, 준비물 챙기기"></textarea>
+              <div class="selected-date-memo-actions">
+                <button class="btn small" id="selectedDateMemoClear" type="button">비우기</button>
+                <button class="btn small primary" id="selectedDateMemoSave" type="button">저장</button>
+              </div>
+            </div>
+
+            <div class="selected-day-divider"></div>
+
             <div class="selected-day-section">
               <div class="selected-day-section-head">
                 <span>그날의 일정</span>
@@ -11220,6 +11238,255 @@ body.dark .dashboard-memo-input{
   else boot();
   window.addEventListener('focus', loadMemo);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden) loadMemo();});
+})();
+</script>
+
+
+<style>
+/* =========================================================
+   V20 Selected Date Memo
+   - Adds the same date-based memo system to the Tasks selected-date card.
+   ========================================================= */
+.selected-day-memo-card{
+  margin:16px 0 4px;
+  padding:16px;
+  border:1px solid rgba(122,139,171,.18);
+  border-radius:24px;
+  background:rgba(255,255,255,.33);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35);
+}
+body.dark .selected-day-memo-card{
+  background:rgba(255,255,255,.045);
+  border-color:rgba(255,255,255,.08);
+}
+.selected-day-memo-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+.selected-day-memo-head strong{
+  display:block;
+  font-size:16px;
+  font-weight:950;
+  color:var(--text);
+}
+.selected-day-memo-head span,
+.selected-day-memo-head em{
+  display:block;
+  margin-top:4px;
+  font-size:12px;
+  font-style:normal;
+  font-weight:900;
+  color:var(--muted);
+}
+.selected-date-memo-input{
+  width:100%;
+  min-height:96px;
+  resize:vertical;
+  border-radius:20px;
+  padding:14px;
+  line-height:1.55;
+  font-size:14px;
+  font-weight:760;
+  background:rgba(255,255,255,.45);
+}
+body.dark .selected-date-memo-input{background:rgba(255,255,255,.055)}
+.selected-date-memo-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:10px;
+}
+@media(max-width:860px){
+  .selected-day-memo-card{padding:14px;border-radius:22px;margin:14px 0 2px}
+  .selected-date-memo-actions{display:grid;grid-template-columns:1fr 1fr}
+  .selected-date-memo-actions .btn{width:100%}
+}
+</style>
+
+<script>
+/* V20: selected date memo on Tasks page */
+(function(){
+  const $ = id => document.getElementById(id);
+  function currentSelectedKey(){
+    try{
+      if(typeof selectedKey !== 'undefined' && selectedKey) return selectedKey;
+      if(typeof todayKey === 'function') return todayKey();
+    }catch(e){}
+    return new Date().toISOString().slice(0,10);
+  }
+  function readMemos(){
+    try{return JSON.parse(localStorage.getItem('ds.dailyMemos') || '{}') || {}}catch(e){return {}}
+  }
+  function writeMemos(obj){
+    try{localStorage.setItem('ds.dailyMemos', JSON.stringify(obj || {}))}catch(e){}
+  }
+  function setState(text){
+    const el=$('selectedDateMemoState');
+    if(el) el.textContent=text;
+  }
+  function updateCount(){
+    const input=$('selectedDateMemoInput');
+    const count=$('selectedDateMemoCount');
+    if(count) count.textContent=`${(input?.value || '').length}자`;
+  }
+  let lastLoadedKey='';
+  let saveTimer=null;
+  function loadSelectedMemo(force=false){
+    const input=$('selectedDateMemoInput');
+    if(!input) return;
+    const key=currentSelectedKey();
+    if(!force && lastLoadedKey===key) return;
+    lastLoadedKey=key;
+    const memos=readMemos();
+    input.value=memos[key] || '';
+    updateCount();
+    setState(input.value.trim() ? '저장됨' : '자동 저장');
+  }
+  function saveSelectedMemo(showToast=false){
+    const input=$('selectedDateMemoInput');
+    if(!input) return;
+    const key=currentSelectedKey();
+    const memos=readMemos();
+    const value=input.value.trimEnd();
+    if(value) memos[key]=value;
+    else delete memos[key];
+    writeMemos(memos);
+    updateCount();
+    setState(value ? '저장됨' : '비어 있음');
+    if(showToast && typeof window.showToast === 'function') window.showToast(value ? '선택한 날짜 메모를 저장했습니다' : '선택한 날짜 메모를 비웠습니다');
+  }
+  function bindSelectedMemo(){
+    const input=$('selectedDateMemoInput');
+    if(!input || input.dataset.boundSelectedMemo==='true') return;
+    input.dataset.boundSelectedMemo='true';
+    input.addEventListener('input',()=>{
+      updateCount();
+      setState('작성 중');
+      clearTimeout(saveTimer);
+      saveTimer=setTimeout(()=>saveSelectedMemo(false),500);
+    });
+    $('selectedDateMemoSave')?.addEventListener('click',()=>saveSelectedMemo(true));
+    $('selectedDateMemoClear')?.addEventListener('click',()=>{
+      input.value='';
+      saveSelectedMemo(true);
+    });
+    loadSelectedMemo(true);
+  }
+  function boot(){bindSelectedMemo();}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+
+  const oldRenderTodos = window.renderTodos;
+  if(typeof oldRenderTodos === 'function' && !oldRenderTodos.__v20MemoWrapped){
+    const wrapped=function(){
+      const result=oldRenderTodos.apply(this, arguments);
+      setTimeout(()=>loadSelectedMemo(true),0);
+      return result;
+    };
+    wrapped.__v20MemoWrapped=true;
+    window.renderTodos=wrapped;
+  }
+  document.addEventListener('click', (e)=>{
+    if(e.target?.closest?.('[data-date], [data-cal], #jumpToday, [data-mobile-view="tasks"]')){
+      setTimeout(()=>loadSelectedMemo(true),80);
+    }
+  }, true);
+  setInterval(()=>loadSelectedMemo(false),1000);
+})();
+</script>
+
+
+
+<style id="tn-v21-wide-tabbar-cleanup">
+/* =========================================================
+   V21 Wide/landscape navigation cleanup
+   - Fixes the mobile bottom tabbar appearing as grey rows in iPad
+     landscape / desktop-like layouts.
+   - Tablet portrait still keeps the bottom tabbar.
+   ========================================================= */
+@media (orientation:landscape), (min-width:941px){
+  body:not(.tn-force-mobile-tabs) #mobileTabbar,
+  body:not(.tn-force-mobile-tabs) .mobile-tabbar{
+    display:none !important;
+    visibility:hidden !important;
+    opacity:0 !important;
+    pointer-events:none !important;
+    transform:none !important;
+  }
+}
+
+body.tn-wide-ui #mobileTabbar,
+body.tn-wide-ui .mobile-tabbar,
+body.tn-landscape-ui #mobileTabbar,
+body.tn-landscape-ui .mobile-tabbar{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+
+body.tn-wide-ui .sidebar,
+body.tn-landscape-ui .sidebar{
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  pointer-events:auto !important;
+}
+
+body.tn-wide-ui .app,
+body.tn-landscape-ui .app{
+  padding-bottom:clamp(18px,2.4vw,34px) !important;
+}
+</style>
+
+<script id="tn-v21-wide-tabbar-cleanup-js">
+(function(){
+  const $ = id => document.getElementById(id);
+  function isTabletPortrait(){
+    const w = window.innerWidth || document.documentElement.clientWidth || 0;
+    const h = window.innerHeight || document.documentElement.clientHeight || 0;
+    const touch = (navigator.maxTouchPoints || 0) > 0;
+    return touch && h > w && w >= 700 && w <= 1280;
+  }
+  function isWideOrLandscape(){
+    const w = window.innerWidth || document.documentElement.clientWidth || 0;
+    const h = window.innerHeight || document.documentElement.clientHeight || 0;
+    return w > h || w >= 941;
+  }
+  function cleanup(){
+    const tabletPortrait = isTabletPortrait();
+    const wide = isWideOrLandscape() && !tabletPortrait;
+    document.body.classList.toggle('tn-wide-ui', wide && (window.innerWidth || 0) >= 941);
+    document.body.classList.toggle('tn-landscape-ui', wide && (window.innerWidth || 0) > (window.innerHeight || 0));
+
+    if(wide){
+      document.body.classList.remove('tablet-portrait-ui','tn-tablet-portrait-force-tabs','tn-focus-stale','tn-force-mobile-tabs');
+      const bar = $('mobileTabbar');
+      if(bar){
+        bar.style.setProperty('display','none','important');
+        bar.style.setProperty('visibility','hidden','important');
+        bar.style.setProperty('opacity','0','important');
+        bar.style.setProperty('pointer-events','none','important');
+      }
+    }else{
+      const bar = $('mobileTabbar');
+      if(bar){
+        bar.style.removeProperty('display');
+        bar.style.removeProperty('visibility');
+        bar.style.removeProperty('opacity');
+        bar.style.removeProperty('pointer-events');
+      }
+    }
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cleanup); else cleanup();
+  window.addEventListener('resize', () => setTimeout(cleanup, 80));
+  window.addEventListener('orientationchange', () => setTimeout(cleanup, 260));
+  document.addEventListener('visibilitychange', cleanup);
+  setTimeout(cleanup, 300);
+  setTimeout(cleanup, 1400);
+  setInterval(cleanup, 1500);
 })();
 </script>
 
