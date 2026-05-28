@@ -1,15 +1,8 @@
-const TEMPO_CACHE = 'temponest-pwa-v23';
+const TEMPO_CACHE = 'temponest-pwa-v24-logo';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/maskable-192.png',
-  './icons/maskable-512.png',
-  './icons/apple-touch-icon.png',
-  './screenshots/screenshot-wide.png',
-  './screenshots/screenshot-narrow.png',
   './icon-192.png',
   './icon-512.png',
   './maskable-192.png',

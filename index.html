@@ -22,9 +22,9 @@
   <meta name="theme-color" content="#3267f6" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#101827" media="(prefers-color-scheme: dark)" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png" />
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
 
   <style>
     /* =========================================================
@@ -7961,8 +7961,8 @@ body.dark .mobile-notify-shortcut{background:rgba(255,255,255,.05)}
           if(reg?.showNotification){
             await reg.showNotification('TempoNest 알림 켜짐', {
               body:'타이머 종료와 알람을 팝업으로 알려드릴게요.',
-              icon:'icons/icon-192.png',
-              badge:'icons/maskable-192.png',
+              icon:'icon-192.png',
+              badge:'maskable-192.png',
               tag:'temponest-ready'
             });
           }else{
@@ -8302,7 +8302,7 @@ body.dark .tn-tutorial-card{border-color:rgba(255,255,255,.08)}
 
   async function showAppNotification(title, body, tag='temponest'){
     if(!('Notification' in window) || Notification.permission !== 'granted') return false;
-    const data = {body, icon:'icons/icon-192.png', badge:'icons/maskable-192.png', tag};
+    const data = {body, icon:'icon-192.png', badge:'maskable-192.png', tag};
     try{
       const reg = await navigator.serviceWorker?.ready;
       if(reg?.showNotification){ await reg.showNotification(title, data); return true; }
