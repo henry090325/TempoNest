@@ -4091,23 +4091,6 @@
               </div>
               <div class="selected-date-actions"><button class="btn small" data-open-schedule="selected">+ 일정</button><button class="btn small primary" data-open-task="selected">+ 할 일</button></div>
             </div>
-
-            <div class="selected-day-memo-card">
-              <div class="selected-day-memo-head">
-                <div>
-                  <strong>선택한 날짜 메모</strong>
-                  <span id="selectedDateMemoState">자동 저장</span>
-                </div>
-                <em id="selectedDateMemoCount">0자</em>
-              </div>
-              <textarea class="input selected-date-memo-input" id="selectedDateMemoInput" rows="4" placeholder="이 날짜에 기억할 메모를 적어보세요.
-예: 시험 범위 확인, 준비물 챙기기"></textarea>
-              <div class="selected-date-memo-actions">
-                <button class="btn small" id="selectedDateMemoClear" type="button">비우기</button>
-                <button class="btn small primary" id="selectedDateMemoSave" type="button">저장</button>
-              </div>
-            </div>
-
             <div class="selected-day-divider"></div>
 
             <div class="selected-day-section">
@@ -4126,6 +4109,23 @@
                 <em id="selectedTodoCount">0개</em>
               </div>
               <ul class="todo-list" id="selectedTodoList"></ul>
+            </div>
+          </div>
+
+
+          <div class="card glass selected-day-memo-card selected-date-memo-standalone">
+            <div class="selected-day-memo-head">
+              <div>
+                <strong>선택한 날짜 메모</strong>
+                <span id="selectedDateMemoState">자동 저장</span>
+              </div>
+              <em id="selectedDateMemoCount">0자</em>
+            </div>
+            <textarea class="input selected-date-memo-input" id="selectedDateMemoInput" rows="6" placeholder="이 날짜에 기억할 메모를 적어보세요.
+예: 시험 범위 확인, 준비물 챙기기"></textarea>
+            <div class="selected-date-memo-actions">
+              <button class="btn small" id="selectedDateMemoClear" type="button">비우기</button>
+              <button class="btn small primary" id="selectedDateMemoSave" type="button">저장</button>
             </div>
           </div>
 
@@ -11487,6 +11487,70 @@ body.tn-landscape-ui .app{
   setTimeout(cleanup, 300);
   setTimeout(cleanup, 1400);
   setInterval(cleanup, 1500);
+})();
+</script>
+
+
+
+<style>
+/* =========================================================
+   V22 Tasks memo card placement
+   - Keeps selected-date memo as a separate card in the right column.
+   ========================================================= */
+#tasksScreen .side{
+  align-content:start;
+}
+#tasksScreen .selected-date-memo-standalone{
+  margin-top:18px;
+  padding:24px;
+}
+#tasksScreen .selected-day-card + .selected-date-memo-standalone{
+  margin-top:18px;
+}
+#tasksScreen .selected-date-memo-standalone .selected-date-memo-input{
+  min-height:150px;
+}
+@media(min-width:861px){
+  #tasksScreen .side{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  #tasksScreen .selected-date-memo-standalone{
+    margin:0;
+  }
+}
+@media(max-width:860px){
+  #tasksScreen .selected-date-memo-standalone{
+    margin-top:14px;
+    padding:18px;
+    border-radius:28px;
+  }
+  #tasksScreen .selected-date-memo-standalone .selected-date-memo-input{
+    min-height:120px;
+  }
+}
+</style>
+
+<script>
+/* V22: make selected date memo a standalone card after Tasks rendering. */
+(function(){
+  const $ = id => document.getElementById(id);
+  function ensureMemoStandalone(){
+    const screen=$('tasksScreen');
+    const side=screen?.querySelector(':scope > aside.side');
+    const memo=screen?.querySelector('.selected-date-memo-standalone');
+    const selected=screen?.querySelector('.selected-day-card');
+    if(side && memo && selected && memo.parentElement!==side){
+      side.appendChild(memo);
+    }
+    if(side && memo && selected && selected.nextElementSibling!==memo){
+      side.insertBefore(memo, selected.nextElementSibling);
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ensureMemoStandalone); else ensureMemoStandalone();
+  window.addEventListener('resize', ensureMemoStandalone, {passive:true});
+  window.addEventListener('orientationchange', () => setTimeout(ensureMemoStandalone, 250));
 })();
 </script>
 
