@@ -3686,6 +3686,109 @@
 }
 </style>
 
+
+
+<style id="tn-v14-sidebar-roomy-patch">
+/* V14: make the left desktop/tablet navigation more spacious */
+@media (min-width:861px){
+  :root{--sidebar:144px !important;}
+  .app{
+    grid-template-columns:144px minmax(0,1fr) !important;
+    gap:28px !important;
+  }
+  .sidebar{
+    width:144px !important;
+    padding:20px 16px !important;
+    gap:14px !important;
+    border-radius:32px !important;
+  }
+  .brand{
+    width:64px !important;
+    height:64px !important;
+    border-radius:24px !important;
+    margin-bottom:8px !important;
+  }
+  .brand-logo{
+    width:42px !important;
+    height:42px !important;
+    border-radius:16px !important;
+    font-size:22px !important;
+  }
+  .nav{
+    gap:9px !important;
+  }
+  .nav-item{
+    min-height:74px !important;
+    border-radius:24px !important;
+    gap:8px !important;
+    font-size:14px !important;
+    font-weight:900 !important;
+    letter-spacing:-.02em;
+  }
+  .nav-item .ico{
+    font-size:27px !important;
+  }
+  .nav-item .ico svg{
+    width:27px !important;
+    height:27px !important;
+  }
+  .mini-focus{
+    padding:15px 12px !important;
+    margin-top:14px !important;
+    border-radius:24px !important;
+  }
+  .mini-focus b{
+    font-size:13px !important;
+    margin-bottom:6px !important;
+  }
+  .mini-focus time{
+    font-size:20px !important;
+    margin-bottom:12px !important;
+  }
+  .circle-btn{
+    width:42px !important;
+    height:42px !important;
+  }
+}
+
+@media (max-height:850px) and (min-width:861px){
+  :root{--sidebar:136px !important;}
+  .app{
+    grid-template-columns:136px minmax(0,1fr) !important;
+    gap:24px !important;
+  }
+  .sidebar{
+    width:136px !important;
+    padding:16px 14px !important;
+    gap:10px !important;
+  }
+  .brand{
+    width:58px !important;
+    height:58px !important;
+    border-radius:22px !important;
+    margin-bottom:5px !important;
+  }
+  .nav{gap:6px !important;}
+  .nav-item{
+    min-height:64px !important;
+    border-radius:21px !important;
+    gap:6px !important;
+    font-size:13px !important;
+  }
+  .nav-item .ico{
+    font-size:24px !important;
+  }
+  .mini-focus{
+    padding:12px 10px !important;
+    margin-top:10px !important;
+    border-radius:22px !important;
+  }
+  .mini-focus time{
+    font-size:18px !important;
+  }
+}
+</style>
+
 </head>
 <body>
   <!-- =========================================================
@@ -6533,14 +6636,30 @@
   function updateLaunchDashboard(){
     if(!$("launchQuickGrid")) return;
     const next = findNextItem();
+    const key = today();
+    const todosObjForNext = typeof todos !== "undefined" ? todos : readJson("ds.todos", {});
+    const schedulesObjForNext = readJson("ds.schedules", {});
+    const todayTodosForNext = Array.isArray(todosObjForNext && todosObjForNext[key]) ? todosObjForNext[key] : [];
+    const todaySchedulesForNext = Array.isArray(schedulesObjForNext && schedulesObjForNext[key]) ? schedulesObjForNext[key] : [];
+    const totalTodayItems = todayTodosForNext.length + todaySchedulesForNext.length;
+    const undoneTodayTodos = todayTodosForNext.filter(t => !t.done).length;
+
     if(next){
       $("launchNextTitle").textContent = next.title || "다음 항목";
       $("launchNextMeta").textContent = `${next.kind}${next.time ? " · " + next.time : " · 시간 없음"}`;
-      $("launchFocusHint").textContent = `${next.kind} '${next.title}'부터 시작해볼까요?`;
+      $("launchFocusHint").textContent = `${next.kind}부터 차분히 시작해볼까요?`;
+    }else if(totalTodayItems === 0){
+      $("launchNextTitle").textContent = "아직 추가한 게 없어요";
+      $("launchNextMeta").textContent = "할 일이나 일정을 추가하면 다음 항목이 여기에 떠요.";
+      $("launchFocusHint").textContent = "먼저 오늘 할 일을 하나 추가해볼까요?";
+    }else if(todaySchedulesForNext.length === 0 && todayTodosForNext.length > 0 && undoneTodayTodos === 0){
+      $("launchNextTitle").textContent = "오늘 할 일 끝!";
+      $("launchNextMeta").textContent = "수고했어요. 등록한 할 일을 모두 마쳤어요.";
+      $("launchFocusHint").textContent = "오늘은 정리 완료. 가볍게 쉬어도 좋아요.";
     }else{
-      $("launchNextTitle").textContent = "다음 할 일 없음";
-      $("launchNextMeta").textContent = "오늘 등록된 일정과 할 일을 기다리는 중이에요.";
-      $("launchFocusHint").textContent = "타이머를 켜고 오늘 할 일을 하나만 정리해요.";
+      $("launchNextTitle").textContent = "오늘 항목 정리 완료";
+      $("launchNextMeta").textContent = "수고했어요. 남은 항목이 없어요.";
+      $("launchFocusHint").textContent = "완료한 흐름을 통계에서 확인해봐요.";
     }
 
     const goals = getDailyGoals();
@@ -6920,7 +7039,7 @@
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyNextCopy);
   else applyNextCopy();
-  setInterval(applyNextCopy, 500);
+  setInterval(applyNextCopy, 1500);
 })();
 </script>
 
@@ -9966,6 +10085,88 @@ body.dark .tn-v11-actions{background:linear-gradient(180deg,rgba(15,23,42,0),var
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
   setTimeout(boot, 700);
   setInterval(() => {installFeedbackButtons(); applyDiverseEvaluation();}, 1600);
+})();
+</script>
+
+
+
+<style>
+/* =========================================================
+   V12 reset flow
+   - Clearing data returns to the very first landing/onboarding flow.
+   - Example todos are NOT recreated after reset.
+   ========================================================= */
+#clearDataYes::after{content:""}
+</style>
+
+<script>
+/* V12: full reset returns to first screen with an empty todo list */
+(function(){
+  const $ = id => document.getElementById(id);
+  function todayKeyV12(){
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function write(key, value){
+    try{ localStorage.setItem(key, JSON.stringify(value)); }catch(e){}
+  }
+  function removeAllTempoData(){
+    try{
+      Object.keys(localStorage)
+        .filter(k => k.startsWith('ds.'))
+        .forEach(k => localStorage.removeItem(k));
+    }catch(e){}
+  }
+  function resetToFirstRunEmpty(){
+    removeAllTempoData();
+    const today = todayKeyV12();
+
+    // Important: keep these as explicit empty objects so the old demo items
+    // "공부하기 / 과제 제출 / 독서 20페이지" are not generated again.
+    write('ds.todos', {});
+    write('ds.schedules', {});
+    write('ds.alarms', []);
+    write('ds.stats', {date:today, focusSeconds:0});
+    write('ds.goals', {dailyFocusMinutes:60, dailyTodos:3});
+    write('ds.selectedDate', today);
+    write('ds.lastSeenDate', today);
+    localStorage.setItem('ds.emptyStartAfterReset.v13', 'true');
+
+    // Do NOT set landing/tutorial completion keys.
+    // After reload, the app should show landing -> start setup -> tips again.
+    try{ sessionStorage.setItem('tn-reset-v13','true'); }catch(e){}
+    const base = location.origin + location.pathname;
+    location.replace(`${base}?v=mobilev13&reset=1&t=${Date.now()}`);
+  }
+
+  function patchClearModalCopy(){
+    const title = $('clearDataTitle');
+    const desc = title?.parentElement?.querySelector('p');
+    const yes = $('clearDataYes');
+    if(title) title.textContent = '정말 처음 화면으로 돌아갈까요?';
+    if(desc) desc.innerHTML = '저장된 할 일, 알람, 테마, 날씨 기록이 전부 사라지고 <strong>처음 시작 화면</strong>으로 돌아갑니다. 단, 예시 할 일 3개는 다시 추가하지 않아요.';
+    if(yes) yes.textContent = '비우고 처음으로';
+  }
+
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest && e.target.closest('#clearDataYes');
+    if(!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+    resetToFirstRunEmpty();
+  }, true);
+
+  function boot(){
+    patchClearModalCopy();
+    if(sessionStorage.getItem('tn-reset-v13') === 'true'){
+      try{ sessionStorage.removeItem('tn-reset-v13'); }catch(e){}
+      try{ if(typeof showToast === 'function') setTimeout(()=>showToast('처음 화면으로 돌아왔습니다'), 1200); }catch(e){}
+    }
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  setTimeout(patchClearModalCopy, 700);
+  setInterval(patchClearModalCopy, 1800);
 })();
 </script>
 
