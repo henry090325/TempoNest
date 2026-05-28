@@ -11554,5 +11554,122 @@ body.tn-landscape-ui .app{
 })();
 </script>
 
+
+
+<style>
+/* =========================================================
+   V23 Tasks page split layout
+   - Calendar stays on top.
+   - Bottom area is split 50:50: selected date card on the left,
+     date memo card on the right.
+   - Mobile/portrait keeps natural vertical stacking.
+   ========================================================= */
+@media (min-width: 861px){
+  #tasksScreen.screen.active{
+    display:grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap:24px !important;
+    align-items:start !important;
+  }
+  #tasksScreen > .panel{
+    width:100% !important;
+    max-width:none !important;
+  }
+  #tasksScreen > aside.side{
+    width:100% !important;
+    max-width:none !important;
+    min-width:0 !important;
+    display:grid !important;
+    grid-template-columns:minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap:22px !important;
+    align-items:stretch !important;
+    margin-top:0 !important;
+    padding-bottom:36px !important;
+  }
+  #tasksScreen .selected-day-card,
+  #tasksScreen .selected-date-memo-standalone{
+    margin:0 !important;
+    width:100% !important;
+    max-width:none !important;
+    min-width:0 !important;
+    height:100% !important;
+    align-self:stretch !important;
+  }
+  #tasksScreen .selected-day-card{
+    grid-column:1 !important;
+  }
+  #tasksScreen .selected-date-memo-standalone{
+    grid-column:2 !important;
+    padding:24px !important;
+  }
+  #tasksScreen .selected-date-memo-standalone .selected-date-memo-input{
+    min-height:220px !important;
+    height:clamp(220px, 26vh, 340px) !important;
+    resize:vertical !important;
+  }
+  #tasksScreen .selected-date-memo-actions{
+    margin-top:14px !important;
+  }
+}
+
+@media (min-width:861px) and (max-width:1120px){
+  #tasksScreen > aside.side{
+    gap:18px !important;
+  }
+  #tasksScreen .selected-day-card,
+  #tasksScreen .selected-date-memo-standalone{
+    padding:20px !important;
+    border-radius:28px !important;
+  }
+}
+
+@media (max-width:860px), (orientation:portrait) and (max-width:1024px){
+  #tasksScreen.screen.active{
+    display:block !important;
+  }
+  #tasksScreen > aside.side{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:16px !important;
+    margin-top:16px !important;
+  }
+  #tasksScreen .selected-day-card,
+  #tasksScreen .selected-date-memo-standalone{
+    height:auto !important;
+    margin:0 !important;
+  }
+  #tasksScreen .selected-date-memo-standalone .selected-date-memo-input{
+    min-height:130px !important;
+    height:auto !important;
+  }
+}
+</style>
+
+<script>
+/* V23: selected date left / date memo right, with stable labels. */
+(function(){
+  const $ = id => document.getElementById(id);
+  function applyTasksSplit(){
+    const screen = $('tasksScreen');
+    const side = screen?.querySelector(':scope > aside.side');
+    const selected = screen?.querySelector('.selected-day-card');
+    const memo = screen?.querySelector('.selected-date-memo-standalone');
+    if(!screen || !side || !selected || !memo) return;
+    if(selected.parentElement !== side) side.insertBefore(selected, side.firstChild);
+    if(memo.parentElement !== side) side.appendChild(memo);
+    if(side.firstElementChild !== selected) side.insertBefore(selected, side.firstElementChild);
+    if(selected.nextElementSibling !== memo) side.insertBefore(memo, selected.nextElementSibling);
+    const title = memo.querySelector('.selected-day-memo-head strong');
+    if(title) title.textContent = '날짜 메모';
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyTasksSplit);
+  else applyTasksSplit();
+  window.addEventListener('resize', () => setTimeout(applyTasksSplit, 80), {passive:true});
+  window.addEventListener('orientationchange', () => setTimeout(applyTasksSplit, 260), {passive:true});
+  setTimeout(applyTasksSplit, 300);
+  setTimeout(applyTasksSplit, 1200);
+})();
+</script>
+
 </body>
 </html>
