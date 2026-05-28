@@ -3928,11 +3928,30 @@
             <div class="btn-row"><button class="btn primary" id="swToggle">시작</button><button class="btn" id="swReset">리셋</button><button class="btn" id="swLap">랩</button></div>
             <div class="lap-list" id="lapList"></div>
           </div>
-          <div class="card glass">
-            <div class="section-head" style="margin-bottom:4px"><div class="card-title">타이머 빠른 실행</div><span class="pomodoro-mode-chip" id="dashTimerMode">집중 · 1번째</span></div>
-            <div class="timer-display" id="dashTimerText" style="font-size:46px;margin:16px 0">00:25:00</div>
-            <p class="timer-helper" id="dashTimerHelp">25분 집중 후 5분 휴식으로 넘어가요.</p>
-            <div class="btn-row"><button class="btn primary" id="dashTimerToggle">시작</button><button class="btn" id="dashTimerReset">리셋</button><button class="btn" data-view-jump="timer">열기</button></div>
+          <div class="card glass dashboard-memo-card">
+            <div class="section-head memo-head" style="margin-bottom:10px">
+              <div>
+                <div class="card-title">오늘 메모</div>
+                <p class="page-desc" id="dashboardMemoDate">오늘 느낀 점이나 내일 할 일을 짧게 남겨보세요.</p>
+              </div>
+              <span class="status-pill" id="dashboardMemoState">자동 저장</span>
+            </div>
+            <textarea class="input dashboard-memo-input" id="dashboardMemoInput" rows="6" placeholder="예: 오늘은 수학 데일리부터 시작하기.
+끝나고 과제 제출 확인하기."></textarea>
+            <div class="memo-footer">
+              <span id="dashboardMemoCount">0자</span>
+              <div class="memo-actions">
+                <button class="btn small" id="dashboardMemoClear" type="button">비우기</button>
+                <button class="btn small primary" id="dashboardMemoSave" type="button">저장</button>
+              </div>
+            </div>
+            <div class="dashboard-timer-legacy" aria-hidden="true" hidden>
+              <span id="dashTimerMode">집중 · 1번째</span>
+              <span id="dashTimerText">00:25:00</span>
+              <span id="dashTimerHelp">25분 집중 후 5분 휴식으로 넘어가요.</span>
+              <button id="dashTimerToggle" type="button">시작</button>
+              <button id="dashTimerReset" type="button">리셋</button>
+            </div>
           </div>
         </aside>
       </section>
@@ -11074,6 +11093,133 @@ body.tn-focus-stale.tn-tablet-portrait-force-tabs .mobile-tabbar{
   setInterval(sync, 1200);
   setTimeout(sync, 300);
   setTimeout(sync, 1500);
+})();
+</script>
+
+
+
+<style>
+/* =========================================================
+   V19 Dashboard Memo
+   - Replaces dashboard quick timer with a daily memo card.
+   ========================================================= */
+.dashboard-memo-card{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.dashboard-memo-input{
+  width:100%;
+  min-height:150px;
+  resize:vertical;
+  line-height:1.55;
+  font-size:15px;
+  font-weight:760;
+  padding:16px;
+  border-radius:22px;
+  background:rgba(255,255,255,.42);
+}
+body.dark .dashboard-memo-input{
+  background:rgba(255,255,255,.045);
+}
+.memo-footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  color:var(--muted);
+  font-size:13px;
+  font-weight:900;
+}
+.memo-actions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.dashboard-timer-legacy{display:none !important}
+@media(max-width:860px){
+  .dashboard-memo-input{min-height:130px;font-size:14px}
+  .memo-footer{align-items:stretch;flex-direction:column}
+  .memo-actions{display:grid;grid-template-columns:1fr 1fr}
+}
+</style>
+
+<script>
+/* V19: dashboard daily memo */
+(function(){
+  const $ = id => document.getElementById(id);
+  function todayKeySafe(){
+    try{return typeof todayKey === 'function' ? todayKey() : new Date().toISOString().slice(0,10)}catch(e){return new Date().toISOString().slice(0,10)}
+  }
+  function readMemos(){
+    try{return JSON.parse(localStorage.getItem('ds.dailyMemos') || '{}') || {}}catch(e){return {}}
+  }
+  function writeMemos(obj){
+    try{localStorage.setItem('ds.dailyMemos', JSON.stringify(obj || {}))}catch(e){}
+  }
+  function formatMemoDate(key){
+    try{
+      const [y,m,d]=String(key).split('-').map(Number);
+      const date=new Date(y,m-1,d);
+      return `${date.getFullYear()}년 ${date.getMonth()+1}월 ${date.getDate()}일 메모`;
+    }catch(e){return '오늘 메모'}
+  }
+  function setState(text){
+    const el=$('dashboardMemoState');
+    if(el) el.textContent=text;
+  }
+  function updateCount(){
+    const input=$('dashboardMemoInput');
+    const count=$('dashboardMemoCount');
+    if(count) count.textContent=`${(input?.value || '').length}자`;
+  }
+  function loadMemo(){
+    const input=$('dashboardMemoInput');
+    if(!input) return;
+    const key=todayKeySafe();
+    const memos=readMemos();
+    input.value=memos[key] || '';
+    const dateEl=$('dashboardMemoDate');
+    if(dateEl) dateEl.textContent=formatMemoDate(key);
+    updateCount();
+    setState(input.value.trim() ? '저장됨' : '자동 저장');
+  }
+  function saveMemo(showToast=false){
+    const input=$('dashboardMemoInput');
+    if(!input) return;
+    const key=todayKeySafe();
+    const memos=readMemos();
+    const value=input.value.trimEnd();
+    if(value) memos[key]=value;
+    else delete memos[key];
+    writeMemos(memos);
+    updateCount();
+    setState(value ? '저장됨' : '비어 있음');
+    if(showToast && typeof window.showToast === 'function') window.showToast(value ? '오늘 메모를 저장했습니다' : '오늘 메모를 비웠습니다');
+  }
+  let memoTimer=null;
+  function bindMemo(){
+    const input=$('dashboardMemoInput');
+    if(!input || input.dataset.memoBound==='true') return;
+    input.dataset.memoBound='true';
+    input.addEventListener('input',()=>{
+      updateCount();
+      setState('작성 중');
+      clearTimeout(memoTimer);
+      memoTimer=setTimeout(()=>saveMemo(false), 500);
+    });
+    $('dashboardMemoSave')?.addEventListener('click',()=>saveMemo(true));
+    $('dashboardMemoClear')?.addEventListener('click',()=>{
+      input.value='';
+      saveMemo(true);
+    });
+    loadMemo();
+  }
+  const boot=()=>{bindMemo();};
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  window.addEventListener('focus', loadMemo);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden) loadMemo();});
 })();
 </script>
 
