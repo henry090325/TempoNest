@@ -10892,5 +10892,190 @@ body.dark .tn-v11-actions{background:linear-gradient(180deg,rgba(15,23,42,0),var
 })();
 </script>
 
+
+
+<style id="tn-v18-tablet-portrait-tabbar-rescue">
+/* =========================================================
+   V18: iPad/tablet portrait bottom tabbar rescue.
+   Some iPad Safari/PWA viewports missed the media query or kept a
+   stale focus-mode state, so this patch uses a JS body class plus
+   very late CSS to force the mobile tabbar back in portrait tablet.
+   ========================================================= */
+body.tablet-portrait-ui:not(.focus-mode-open) .mobile-tabbar,
+body.tn-tablet-portrait-force-tabs:not(.focus-mode-open) .mobile-tabbar{
+  display:grid !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  pointer-events:auto !important;
+  position:fixed !important;
+  left:50% !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:calc(env(safe-area-inset-bottom, 0px) + 18px) !important;
+  transform:translateX(-50%) !important;
+  width:min(980px, calc(100vw - 48px)) !important;
+  max-width:980px !important;
+  min-width:min(520px, calc(100vw - 48px)) !important;
+  height:auto !important;
+  grid-template-columns:repeat(4, minmax(0,1fr)) !important;
+  gap:10px !important;
+  padding:10px !important;
+  border-radius:32px !important;
+  z-index:2147483000 !important;
+  box-sizing:border-box !important;
+}
+body.tablet-portrait-ui:not(.focus-mode-open) .mobile-tab,
+body.tn-tablet-portrait-force-tabs:not(.focus-mode-open) .mobile-tab{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-height:64px !important;
+  border-radius:22px !important;
+  gap:5px !important;
+  padding:8px 6px !important;
+  box-sizing:border-box !important;
+}
+body.tablet-portrait-ui:not(.focus-mode-open) .mobile-tab b,
+body.tn-tablet-portrait-force-tabs:not(.focus-mode-open) .mobile-tab b{
+  font-size:22px !important;
+  line-height:1 !important;
+}
+body.tablet-portrait-ui:not(.focus-mode-open) .mobile-tab span,
+body.tn-tablet-portrait-force-tabs:not(.focus-mode-open) .mobile-tab span{
+  display:block !important;
+  font-size:12px !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+}
+body.tablet-portrait-ui:not(.focus-mode-open) .app,
+body.tn-tablet-portrait-force-tabs:not(.focus-mode-open) .app{
+  padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 132px) !important;
+}
+body.tablet-portrait-ui:not(.focus-mode-open) .sidebar,
+body.tablet-portrait-ui:not(.focus-mode-open) .drawer-scrim,
+body.tablet-portrait-ui:not(.focus-mode-open) .hamburger,
+body.tn-tablet-portrait-force-tabs:not(.focus-mode-open) .sidebar,
+body.tn-tablet-portrait-force-tabs:not(.focus-mode-open) .drawer-scrim,
+body.tn-tablet-portrait-force-tabs:not(.focus-mode-open) .hamburger{
+  display:none !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+/* When focus modal is really closed, ignore stale focus-mode-open state. */
+body.tn-focus-stale.tablet-portrait-ui .mobile-tabbar,
+body.tn-focus-stale.tn-tablet-portrait-force-tabs .mobile-tabbar{
+  display:grid !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+</style>
+
+<script id="tn-v18-tablet-portrait-tabbar-rescue-js">
+(function(){
+  const $ = id => document.getElementById(id);
+  const viewToScreen = { dashboard:'dashboardScreen', timer:'timerScreen', tasks:'tasksScreen', stats:'statsScreen' };
+  const labels = [
+    ['dashboard','▦','오늘'],
+    ['timer','◴','집중'],
+    ['tasks','✓','할 일'],
+    ['stats','↗','통계']
+  ];
+
+  function isTabletPortraitLike(){
+    const w = window.innerWidth || document.documentElement.clientWidth || 0;
+    const h = window.innerHeight || document.documentElement.clientHeight || 0;
+    const touch = (navigator.maxTouchPoints || 0) > 0;
+    return touch && h > w && w >= 700 && w <= 1280;
+  }
+
+  function isFocusActuallyOpen(){
+    const fs = $('standbyFullscreen');
+    return !!(fs && fs.classList.contains('show') && fs.getAttribute('aria-hidden') !== 'true');
+  }
+
+  function ensureTabbar(){
+    let bar = $('mobileTabbar');
+    if(!bar){
+      bar = document.createElement('nav');
+      bar.id = 'mobileTabbar';
+      bar.className = 'mobile-tabbar';
+      bar.setAttribute('aria-label','하단 메뉴');
+      document.body.appendChild(bar);
+    }
+    if(!bar.querySelector('[data-mobile-view]')){
+      bar.innerHTML = labels.map(([view,icon,text]) => `
+        <button class="mobile-tab" type="button" data-mobile-view="${view}" aria-selected="false"><b>${icon}</b><span>${text}</span></button>
+      `).join('');
+    }
+    if(!bar.__v18Bound){
+      bar.__v18Bound = true;
+      bar.addEventListener('click', e => {
+        const btn = e.target.closest('[data-mobile-view]');
+        if(!btn) return;
+        const view = btn.dataset.mobileView;
+        e.preventDefault();
+        e.stopPropagation();
+        try{ if(typeof switchView === 'function') switchView(view); }catch(_){ }
+        if(viewToScreen[view]){
+          document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+          $(viewToScreen[view])?.classList.add('active');
+          try{ currentView = view; }catch(_){ }
+        }
+        syncActive(view);
+        setTimeout(sync, 60);
+      }, true);
+    }
+    return bar;
+  }
+
+  function getActiveView(){
+    const active = document.querySelector('.screen.active');
+    if(!active) return 'dashboard';
+    const id = active.id || '';
+    return id.replace('Screen','') || 'dashboard';
+  }
+
+  function syncActive(view){
+    const active = view || getActiveView();
+    document.querySelectorAll('.mobile-tab').forEach(btn => {
+      const yes = btn.dataset.mobileView === active;
+      btn.classList.toggle('active', yes);
+      btn.setAttribute('aria-selected', yes ? 'true' : 'false');
+    });
+  }
+
+  function sync(){
+    const tabletPortrait = isTabletPortraitLike();
+    document.body.classList.toggle('tn-tablet-portrait-force-tabs', tabletPortrait);
+    document.body.classList.toggle('tablet-portrait-ui', tabletPortrait);
+
+    const staleFocus = document.body.classList.contains('focus-mode-open') && !isFocusActuallyOpen();
+    document.body.classList.toggle('tn-focus-stale', staleFocus);
+    if(staleFocus) document.body.classList.remove('focus-mode-open');
+
+    if(!tabletPortrait) return;
+    const bar = ensureTabbar();
+    if(isFocusActuallyOpen()){
+      bar.style.display = 'none';
+      return;
+    }
+    bar.style.display = 'grid';
+    bar.style.visibility = 'visible';
+    bar.style.opacity = '1';
+    bar.style.pointerEvents = 'auto';
+    syncActive();
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync); else sync();
+  window.addEventListener('resize', () => setTimeout(sync, 80));
+  window.addEventListener('orientationchange', () => setTimeout(sync, 300));
+  document.addEventListener('click', () => setTimeout(sync, 80), true);
+  setInterval(sync, 1200);
+  setTimeout(sync, 300);
+  setTimeout(sync, 1500);
+})();
+</script>
+
 </body>
 </html>
